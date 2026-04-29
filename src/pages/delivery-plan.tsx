@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Head from "next/head";
 
-// ── Type Definitions ─────────────────────────────────────────────
+// ── Type Definitions ─────────────────────────────────────
 interface ReleaseConfig {
   name: string;
   devStart: number | null;
@@ -53,7 +53,7 @@ type ActiveTiers = {
   major: boolean;
 };
 
-// ── Theme Types ──────────────────────────────────────────────────
+// ── Theme Types ──────────────────────────────────────────
 type Theme = 'dark' | 'light';
 
 interface ThemeColors {
@@ -79,7 +79,7 @@ interface ThemeColors {
   [key: string]: string;
 }
 
-// ── Theme Definitions ────────────────────────────────────────────
+// ── Theme Definitions ────────────────────────────────────
 const darkTheme: ThemeColors = {
   hotPatch: "#FF6B4A",
   hotPatchQA: "#FF8F75",
@@ -124,7 +124,7 @@ const lightTheme: ThemeColors = {
   ghostStroke: "rgba(0, 0, 0, 0.15)",
 };
 
-// ── Timeline Constants ─────────────────────────────────────────────
+// ── Timeline Constants ─────────────────────────────────────
 const START_DATE = new Date(2026, 2, 9);
 const MAY_8 = 9;
 const DOT_SHIFT = MAY_8 - 6;
@@ -142,7 +142,7 @@ const RH = 46;
 const BH = 24;
 const GAP = 14;
 
-// ── Helper Functions ───────────────────────────────────────────────
+// ── Helper Functions ───────────────────────────────────────
 const getWeekLabel = (i: number): string => {
   const d = new Date(START_DATE);
   d.setDate(d.getDate() + i * 7);
@@ -156,32 +156,49 @@ const getMonthLabel = (i: number): string => {
 };
 
 // ── Original Data (Ghost Rendering) ───────────────────────────────
+// Original timeline (no delays) for ghost rendering
 const origDotReleases: ReleaseConfig[] = [
-  { name: "QA Spr 16", devStart: null, devDur: null, qaStart: 0, qaDur: 2, label: "v1.16", isQALegacy: true },
-  ...Array.from({ length: 20 }, (_, i): ReleaseConfig => {
-    const sp = 17 + i;
-    return { name: `Spr ${sp}`, devStart: i * 2, devDur: 2, qaStart: (i + 1) * 2, qaDur: 2, label: `v1.${sp}` };
+  // QA Spr 16 original: should have ended Mar 16 (week 1)
+  { name: "QA Spr 16 (orig)", devStart: null, devDur: null, qaStart: 0, qaDur: 1, label: "v1.16", isQALegacy: true },
+  // Spr 17 original: dev starts Mar 23 (week 2), QA Mar 23 (week 2) ends May 30 (week 12)
+  { name: "Spr 17 (orig)", devStart: 2, devDur: 2, qaStart: 2, qaDur: 10, label: "v1.17" },
+  // Spr 18 original: dev starts Apr 6 (week 4), QA Apr 6 (week 4) ends Apr 13 (week 5)
+  { name: "Spr 18 (orig)", devStart: 4, devDur: 2, qaStart: 4, qaDur: 1, label: "v1.18" },
+  // Spr 19 original: dev starts Apr 6 (week 4), ends Apr 13 (week 5)
+  { name: "Spr 19 (orig)", devStart: 4, devDur: 2, qaStart: 6, qaDur: 2, label: "v1.19" },
+  // Spr 20-36 original: 2-week cadence
+  ...Array.from({ length: 17 }, (_, i): ReleaseConfig => {
+    const sp = 20 + i;
+    return { name: `Spr ${sp} (orig)`, devStart: (6 + i * 2), devDur: 2, qaStart: (8 + i * 2), qaDur: 2, label: `v1.${sp}` };
   }),
 ];
 
 const buildOrigMajorReleases = (): MajorReleaseConfig[] => {
   const releases: MajorReleaseConfig[] = [];
-  for (let i = 0; i < 11; i++) {
+  // Original M1: Dev weeks 0-4, QA weeks 2-6
+  releases.push({ name: "M1 (orig)", devStart: 0, devDur: 4, qaStart: 2, qaDur: 4 });
+  // Original M2: Dev weeks 4-8 (Apr 6 - May 4), QA weeks 6-10
+  releases.push({ name: "M2 (orig)", devStart: 4, devDur: 4, qaStart: 6, qaDur: 4 });
+  for (let i = 2; i < 9; i++) {
     const n = i + 1;
     const devStart = i * 4;
-    releases.push({ name: `M${n}`, devStart, devDur: 4, qaStart: devStart + 2, qaDur: 4 });
+    releases.push({ name: `M${n} (orig)`, devStart, devDur: 4, qaStart: devStart + 2, qaDur: 4 });
   }
   return releases;
 };
 const origMajorReleases: MajorReleaseConfig[] = buildOrigMajorReleases();
 
-// ── Revised Data ──────────────────────────────────────────────────
+// ── Revised Data ──────────────────────────────────────────
 const dotReleases: ReleaseConfig[] = [
-  { name: "QA Spr 16", devStart: null, devDur: null, qaStart: 0, qaDur: 2, label: "v1.16", isQALegacy: true },
-  { name: "Spr 17", devStart: 0, devDur: 2, qaStart: null, qaDur: null, label: "v1.17" },
-  { name: "Spr 18", devStart: 2, devDur: 2, qaStart: null, qaDur: null, label: "v1.18" },
-  { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 2, qaDur: MAY_8 - 2, label: "v1.18", isCombined: true },
-  { name: "Spr 19", devStart: 4, devDur: MAY_8 - 4, qaStart: MAY_8, qaDur: 2, label: "v1.19" },
+  // QA Spr 16: Delayed, ends Apr 13 (week 5) instead of Mar 16 (week 1)
+  { name: "QA Spr 16", devStart: null, devDur: null, qaStart: 0, qaDur: 5, label: "v1.16", isQALegacy: true },
+  // Combined Spr 17+18 Dev (weeks 0-4)
+  { name: "Spr 17+18", devStart: 0, devDur: 4, qaStart: null, qaDur: null, label: "v1.18", isCombined: true },
+  // Spr 19 Dev: Starts Apr 20 (week 6), ends May 4 (week 8)
+  { name: "Spr 19", devStart: 6, devDur: 2, qaStart: 8, qaDur: 2, label: "v1.19" },
+  // QA Spr 17+18 combined: Starts Apr 20 (week 6), ends May 4 (week 8)
+  { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 6, qaDur: 2, label: "v1.18", isCombined: true },
+  // Spr 20+ (unchanged, start from week 9 = May 11 onwards)
   ...Array.from({ length: 17 }, (_, i): ReleaseConfig => {
     const sp = 20 + i;
     return {
@@ -197,8 +214,10 @@ const dotReleases: ReleaseConfig[] = [
 
 const buildRevisedMajorReleases = (): MajorReleaseConfig[] => {
   const rels: MajorReleaseConfig[] = [];
-  rels.push({ name: "M1", devStart: 0, devDur: 4, qaStart: 2, qaDur: MAY_8 - 2 });
-  rels.push({ name: "M2", devStart: 4, devDur: MAY_8 - 4, qaStart: MAY_8, qaDur: 4 });
+  // M1: Dev weeks 0-4, QA starts Apr 20 (week 6) ends May 8 (week 9) - delayed
+  rels.push({ name: "M1", devStart: 0, devDur: 4, qaStart: 6, qaDur: 3 });
+  // M2: Dev starts Apr 20 (week 6), ends May 4 (week 8) - delayed
+  rels.push({ name: "M2", devStart: 6, devDur: 2, qaStart: 8, qaDur: 4 });
   for (let i = 2; i < 6; i++) {
     const n = i + 1;
     const origDevStart = i * 4;
@@ -228,7 +247,7 @@ const releases = {
   majorReleases,
 };
 
-// ── Component Props Types ──────────────────────────────────────────
+// ── Component Props Types ──────────────────────────────────
 interface BarProps {
   x: number;
   width: number;
@@ -258,7 +277,7 @@ interface OverlapZoneProps {
   height: number;
 }
 
-// ── Reusable Components ───────────────────────────────────────────
+// ── Reusable Components ───────────────────────────────────
 const Bar = ({ x, width, y, height, color, label, sublabel, radius = 5, opacity = 1, dashed }: BarProps) => (
   <g transform={`translate(${x}, ${y})`}>
     <rect
@@ -375,7 +394,7 @@ const Legend = ({ theme }: { theme: ThemeColors }) => {
   );
 };
 
-// ── Theme Toggle Component ────────────────────────────────────────
+// ── Theme Toggle Component ────────────────────────────────
 const ThemeToggle = ({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void }) => (
   <button
     onClick={toggleTheme}
@@ -414,7 +433,7 @@ const ThemeToggle = ({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => 
   </button>
 );
 
-// ── Main Component ─────────────────────────────────────────────────
+// ── Main Component ─────────────────────────────────────────
 export default function DeliveryPlan() {
   const [active, setActive] = useState<ActiveTiers>({ hot: true, dot: true, major: true });
   const [theme, setTheme] = useState<Theme>('dark');
@@ -474,8 +493,8 @@ export default function DeliveryPlan() {
     const allDotQA = releases.dotReleases.filter(d => d.qaStart !== null);
     releases.hotPatches.forEach((hp) => {
       allDotQA.forEach((dq) => {
-        const oStart = Math.max(hp.qaStart, dq.qaStart!);
-        const oEnd = Math.min(hp.qaStart + hp.qaDur, dq.qaStart! + dq.qaDur!);
+        const oStart = Math.max(hp.qaStart!, dq.qaStart!);
+        const oEnd = Math.min(hp.qaStart! + hp.qaDur!, dq.qaStart! + dq.qaDur!);
         if (oEnd > oStart) overlapZones.push({ start: oStart, end: oEnd });
       });
     });
@@ -578,7 +597,7 @@ export default function DeliveryPlan() {
                 <g>
                   <line x1={8} y1={separatorY} x2={chartWidth - 8} y2={separatorY} stroke={COLORS.surfaceLight} strokeWidth={1.5} />
                   <rect x={10} y={separatorY - 10} width={66} height={20} rx={4} fill={COLORS.surface} />
-                  <text x={43} y={separatorY + 1} textAnchor="middle" fill={COLORS.textMuted} fontSize={9} fontWeight="700" fontFamily="'DM Sans', sans-serif">DEV ↕ QA</text>
+                  <text x={43} y={separatorY + 1} textAnchor="middle" fill={COLORS.textMuted} fontSize={9} fontWeight="700" fontFamily="'DM Sans', sans-serif">DEV ↔ QA</text>
                 </g>
               )}
 
