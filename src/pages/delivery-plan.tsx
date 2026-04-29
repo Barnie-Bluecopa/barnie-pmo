@@ -11,6 +11,7 @@ interface ReleaseConfig {
   label?: string;
   isQALegacy?: boolean;
   isCombined?: boolean;
+  releasePointWeek?: number;
 }
 
 interface MajorReleaseConfig {
@@ -158,12 +159,12 @@ const getMonthLabel = (i: number): string => {
 // ── Original Data (Ghost Rendering) ───────────────────────────────
 // Original timeline (no delays) for ghost rendering
 const origDotReleases: ReleaseConfig[] = [
-  // QA Spr 16 original: should have ended Mar 16 (week 1)
-  { name: "QA Spr 16 (orig)", devStart: null, devDur: null, qaStart: 0, qaDur: 1, label: "v1.16", isQALegacy: true },
-  // Spr 17 original: dev starts Mar 23 (week 2), QA Mar 23 (week 2) ends May 30 (week 12)
-  { name: "Spr 17 (orig)", devStart: 2, devDur: 2, qaStart: 2, qaDur: 10, label: "v1.17" },
-  // Spr 18 original: dev starts Apr 6 (week 4), QA Apr 6 (week 4) ends Apr 13 (week 5)
-  { name: "Spr 18 (orig)", devStart: 4, devDur: 2, qaStart: 4, qaDur: 1, label: "v1.18" },
+  // QA Spr 16 original: spans Mar 9 (week 0) to Mar 22 (week 1), release point at Mar 22 (week 2)
+  { name: "QA Spr 16 (orig)", devStart: null, devDur: null, qaStart: 0, qaDur: 2, label: "v1.16", isQALegacy: true },
+  // Spr 17 original: dev starts Mar 23 (week 2), QA Mar 23 (week 2) ends Apr 5 (week 3)
+  { name: "Spr 17 (orig)", devStart: 2, devDur: 2, qaStart: 2, qaDur: 2, label: "v1.17" },
+  // Spr 18 original: dev starts Apr 6 (week 4), QA Apr 6 (week 4) ends Apr 19 (week 5)
+  { name: "Spr 18 (orig)", devStart: 4, devDur: 2, qaStart: 4, qaDur: 2, label: "v1.18" },
   // Spr 19 original: dev starts Apr 6 (week 4), ends Apr 13 (week 5)
   { name: "Spr 19 (orig)", devStart: 4, devDur: 2, qaStart: 6, qaDur: 2, label: "v1.19" },
   // Spr 20-36 original: 2-week cadence
@@ -175,8 +176,8 @@ const origDotReleases: ReleaseConfig[] = [
 
 const buildOrigMajorReleases = (): MajorReleaseConfig[] => {
   const releases: MajorReleaseConfig[] = [];
-  // Original M1: Dev weeks 0-4, QA weeks 2-6
-  releases.push({ name: "M1 (orig)", devStart: 0, devDur: 4, qaStart: 2, qaDur: 4 });
+  // Original M1: Dev weeks 0-4, QA weeks 4-7 (Apr 6 - May 3)
+  releases.push({ name: "M1 (orig)", devStart: 0, devDur: 4, qaStart: 4, qaDur: 4 });
   // Original M2: Dev weeks 4-8 (Apr 6 - May 4), QA weeks 6-10
   releases.push({ name: "M2 (orig)", devStart: 4, devDur: 4, qaStart: 6, qaDur: 4 });
   for (let i = 2; i < 9; i++) {
@@ -190,14 +191,16 @@ const origMajorReleases: MajorReleaseConfig[] = buildOrigMajorReleases();
 
 // ── Revised Data ──────────────────────────────────────────
 const dotReleases: ReleaseConfig[] = [
-  // QA Spr 16: Delayed, ends Apr 13 (week 5) instead of Mar 16 (week 1)
-  { name: "QA Spr 16", devStart: null, devDur: null, qaStart: 0, qaDur: 5, label: "v1.16", isQALegacy: true },
-  // Combined Spr 17+18 Dev (weeks 0-4)
-  { name: "Spr 17+18", devStart: 0, devDur: 4, qaStart: null, qaDur: null, label: "v1.18", isCombined: true },
+  // QA Spr 16: Spans Mar 9 (week 0) to Mar 22 (week 1), release point at Apr 19 (week 6)
+  { name: "QA Spr 16", devStart: null, devDur: null, qaStart: 0, qaDur: 2, label: "v1.16", isQALegacy: true, releasePointWeek: 6 },
+  // Spr 17 Dev: Mar 9 (week 0) to Mar 22 (week 1)
+  { name: "Spr 17", devStart: 0, devDur: 2, qaStart: null, qaDur: null, label: "v1.17" },
+  // Spr 18 Dev: Mar 23 (week 2) to Apr 5 (week 3)
+  { name: "Spr 18", devStart: 2, devDur: 2, qaStart: null, qaDur: null, label: "v1.18" },
   // Spr 19 Dev: Starts Apr 20 (week 6), ends May 10 (week 8)
   { name: "Spr 19", devStart: 6, devDur: 3, qaStart: 9, qaDur: 2, label: "v1.19" },
   // QA Spr 17+18 combined: Starts Apr 20 (week 6), ends May 10 (week 8)
-  { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 6, qaDur: 3, label: "v1.18", isCombined: true },
+  { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 6, qaDur: 3, label: "v1.17+18", isCombined: true },
   // Spr 20+ (unchanged, start from week 9 = May 11 onwards)
   ...Array.from({ length: 17 }, (_, i): ReleaseConfig => {
     const sp = 20 + i;
@@ -502,7 +505,7 @@ export default function DeliveryPlan() {
 
   const dotDevGhosts = origDotReleases.filter(d => d.devStart !== null && d.devStart >= 4);
   const dotQaGhosts = origDotReleases.filter(d => d.qaStart !== null && d.qaStart >= 2 && !d.isQALegacy);
-  const dotRelGhosts = origDotReleases.filter(d => d.qaStart !== null && d.label && d.qaStart >= 2 && !d.isQALegacy);
+  const dotRelGhosts = origDotReleases.filter(d => d.qaStart !== null && d.label);
   const majorDevGhosts = origMajorReleases.filter(m => m.devStart >= 4);
   const majorQaGhosts = origMajorReleases.filter(m => m.qaStart >= 2);
   const majorRelGhosts = origMajorReleases.filter(m => m.qaStart >= 2);
@@ -668,13 +671,13 @@ export default function DeliveryPlan() {
 
               {/* Release Points */}
               {show.dot && fr("dot-rel") && releases.dotReleases.filter(d => d.qaStart !== null && d.label).map((d, i) => {
-                const relWeek = d.qaStart! + d.qaDur!;
+                const relWeek = d.releasePointWeek ?? (d.qaStart! + d.qaDur!);
                 if (relWeek > WEEKS) return null;
                 return <ReleasePoint key={`rp-${i}`} x={wX(relWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label!} />;
               })}
 
               {show.dot && fr("dot-rel") && dotRelGhosts.map((d, i) => {
-                const relWeek = d.qaStart! + d.qaDur!;
+                const relWeek = d.releasePointWeek ?? (d.qaStart! + d.qaDur!);
                 if (relWeek > WEEKS) return null;
                 return <GhostReleasePoint key={`grp-${i}`} x={wX(relWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label} />;
               })}
