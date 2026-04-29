@@ -452,8 +452,8 @@ export default function DeliveryPlan() {
   const setAll = () => setActive({ hot: true, dot: true, major: true });
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
-  const chartWidth = LEFT + WEEKS * WW + RIGHT;
-  const wX = (w: number) => LEFT + w * WW;
+  const timelineWidth = WEEKS * WW + RIGHT;
+  const wX = (w: number) => w * WW;
 
   const show = active;
   const allActive = show.hot && show.dot && show.major;
@@ -566,12 +566,24 @@ export default function DeliveryPlan() {
 
           <Legend theme={COLORS} />
 
-          <div className="rounded-xl shadow-lg overflow-x-auto" style={{ background: COLORS.surface, border: `1px solid ${COLORS.surfaceLight}` }}>
+          <div className="rounded-xl shadow-lg" style={{ background: COLORS.surface, border: `1px solid ${COLORS.surfaceLight}`, display: 'flex', overflow: 'hidden' }}>
+            {/* Left sticky sidebar */}
+            <div style={{ width: LEFT, flexShrink: 0, background: COLORS.surface, borderRight: `1px solid ${COLORS.surfaceLight}`, height: chartHeight, position: 'relative', zIndex: 10 }}>
+              {sec.map((s, i) => (
+                <div key={`sidebar-${i}`} style={{ position: 'absolute', top: s.y, left: 0, right: 0, height: RH }}>
+                  <div style={{ position: 'absolute', left: 6, top: 8, width: 3, height: RH-16, borderRadius: 1.5, background: s.color, opacity: 0.6 }} />
+                  <div style={{ position: 'absolute', left: 16, top: RH/2 - (s.sublabel ? 5 : 0), color: COLORS.textPrimary, fontSize: 11, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>{s.label}</div>
+                  {s.sublabel && <div style={{ position: 'absolute', left: 16, top: RH/2 + 9, color: COLORS.textMuted, fontSize: 9, fontFamily: "'DM Sans', sans-serif" }}>{s.sublabel}</div>}
+                </div>
+              ))}
+            </div>
+            {/* Right scrollable timeline */}
+            <div style={{ flex: 1, overflowX: 'auto' }}>
             <svg
               width="100%"
               height={chartHeight}
-              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-              style={{ display: "block", minWidth: chartWidth }}
+              viewBox={`0 0 ${timelineWidth} ${chartHeight}`}
+              style={{ display: "block", minWidth: timelineWidth }}
             >
               {/* Grid */}
               {Array.from({ length: WEEKS }, (_, w) => (
@@ -598,7 +610,7 @@ export default function DeliveryPlan() {
               {/* Team separator */}
               {multiActive && (
                 <g>
-                  <line x1={8} y1={separatorY} x2={chartWidth - 8} y2={separatorY} stroke={COLORS.surfaceLight} strokeWidth={1.5} />
+                  <line x1={8} y1={separatorY} x2={timelineWidth - 8} y2={separatorY} stroke={COLORS.surfaceLight} strokeWidth={1.5} />
                   <rect x={10} y={separatorY - 10} width={66} height={20} rx={4} fill={COLORS.surface} />
                   <text x={43} y={separatorY + 1} textAnchor="middle" fill={COLORS.textMuted} fontSize={9} fontWeight="700" fontFamily="'DM Sans', sans-serif">DEV ↔ QA</text>
                 </g>
@@ -607,12 +619,7 @@ export default function DeliveryPlan() {
               {/* Section rows */}
               {sec.map((s, i) => (
                 <g key={`s-${i}`}>
-                  <rect x={0} y={s.y} width={chartWidth} height={RH} fill={i % 2 === 0 ? "rgba(255,255,255,0.015)" : "transparent"} />
-                  <rect x={6} y={s.y + 8} width={3} height={RH - 16} rx={1.5} fill={s.color} opacity={0.6} />
-                  <text x={16} y={s.y + RH / 2 - (s.sublabel ? 5 : 0)} fill={COLORS.textPrimary} fontSize={11} fontWeight="600"
-                    fontFamily="'DM Sans', sans-serif" dominantBaseline="middle">{s.label}</text>
-                  {s.sublabel && <text x={16} y={s.y + RH / 2 + 9} fill={COLORS.textMuted} fontSize={9}
-                    fontFamily="'DM Sans', sans-serif" dominantBaseline="middle">{s.sublabel}</text>}
+                  <rect x={0} y={s.y} width={timelineWidth} height={RH} fill={i % 2 === 0 ? "rgba(255,255,255,0.015)" : "transparent"} />
                 </g>
               ))}
 
@@ -713,6 +720,7 @@ export default function DeliveryPlan() {
                 return <GhostReleasePoint key={`gmrp-${i}`} x={wX(relWeek) - 2} y={fr("major-rel")!.y + RH / 2} label={m.name} color={COLORS.majorQA} />;
               })}
             </svg>
+            </div>
           </div>
 
           <p style={{ textAlign: "center", color: COLORS.textMuted, fontSize: 10.5, marginTop: 20, fontFamily: "'DM Sans', sans-serif" }} className="text-xs md:text-sm">
