@@ -165,7 +165,7 @@ const origDotReleases: ReleaseConfig[] = [
   { name: "Spr 17 (orig)", devStart: 2, devDur: 2, qaStart: 2, qaDur: 2, label: "v1.17" },
   // Spr 18 original: dev starts Apr 6 (week 4), QA Apr 6 (week 4) ends Apr 19 (week 5)
   { name: "Spr 18 (orig)", devStart: 4, devDur: 2, qaStart: 4, qaDur: 2, label: "v1.18" },
-  // Spr 19 original: dev starts Apr 6 (week 4), ends Apr 13 (week 5)
+  // Spr 19 original: dev starts Apr 6 (week 4), ends Apr 19 (week 5)
   { name: "Spr 19 (orig)", devStart: 4, devDur: 2, qaStart: 6, qaDur: 2, label: "v1.19" },
   // Spr 20-36 original: 2-week cadence
   ...Array.from({ length: 17 }, (_, i): ReleaseConfig => {
@@ -503,7 +503,7 @@ export default function DeliveryPlan() {
     });
   }
 
-  const dotDevGhosts = origDotReleases.filter(d => d.devStart !== null && d.devStart >= 4);
+  const dotDevGhosts = origDotReleases.filter(d => d.devStart !== null && d.devStart >= 4 && d.name !== "Spr 18 (orig)");
   const dotQaGhosts = origDotReleases.filter(d => d.qaStart !== null && d.qaStart >= 2 && !d.isQALegacy);
   const dotRelGhosts = origDotReleases.filter(d => d.qaStart !== null && d.label);
   const majorDevGhosts = origMajorReleases.filter(m => m.devStart >= 4);
