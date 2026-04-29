@@ -194,10 +194,10 @@ const dotReleases: ReleaseConfig[] = [
   { name: "QA Spr 16", devStart: null, devDur: null, qaStart: 0, qaDur: 5, label: "v1.16", isQALegacy: true },
   // Combined Spr 17+18 Dev (weeks 0-4)
   { name: "Spr 17+18", devStart: 0, devDur: 4, qaStart: null, qaDur: null, label: "v1.18", isCombined: true },
-  // Spr 19 Dev: Starts Apr 20 (week 6), ends May 4 (week 8)
-  { name: "Spr 19", devStart: 6, devDur: 2, qaStart: 8, qaDur: 2, label: "v1.19" },
-  // QA Spr 17+18 combined: Starts Apr 20 (week 6), ends May 4 (week 8)
-  { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 6, qaDur: 2, label: "v1.18", isCombined: true },
+  // Spr 19 Dev: Starts Apr 20 (week 6), ends May 10 (week 8)
+  { name: "Spr 19", devStart: 6, devDur: 3, qaStart: 9, qaDur: 2, label: "v1.19" },
+  // QA Spr 17+18 combined: Starts Apr 20 (week 6), ends May 10 (week 8)
+  { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 6, qaDur: 3, label: "v1.18", isCombined: true },
   // Spr 20+ (unchanged, start from week 9 = May 11 onwards)
   ...Array.from({ length: 17 }, (_, i): ReleaseConfig => {
     const sp = 20 + i;
@@ -214,10 +214,10 @@ const dotReleases: ReleaseConfig[] = [
 
 const buildRevisedMajorReleases = (): MajorReleaseConfig[] => {
   const rels: MajorReleaseConfig[] = [];
-  // M1: Dev weeks 0-4, QA starts Apr 20 (week 6) ends May 8 (week 9) - delayed
+  // M1: Dev weeks 0-4, QA starts Apr 20 (week 6) ends May 10 (week 8) - delayed
   rels.push({ name: "M1", devStart: 0, devDur: 4, qaStart: 6, qaDur: 3 });
-  // M2: Dev starts Apr 20 (week 6), ends May 4 (week 8) - delayed
-  rels.push({ name: "M2", devStart: 6, devDur: 2, qaStart: 8, qaDur: 4 });
+  // M2: Dev starts Apr 20 (week 6), ends May 10 (week 8) - delayed
+  rels.push({ name: "M2", devStart: 6, devDur: 3, qaStart: 9, qaDur: 4 });
   for (let i = 2; i < 6; i++) {
     const n = i + 1;
     const origDevStart = i * 4;
@@ -524,7 +524,7 @@ export default function DeliveryPlan() {
               Dev and QA teams grouped to visualize concurrent workload across Hot Patches, Dot Releases & Major Releases
             </p>
             <p style={{ color: "#F59E0B", marginTop: 4, fontWeight: 600 }} className="text-xs md:text-sm">
-              Revised: Spr 19 Dev, M2 Dev, QA Spr 17+18, QA M1 extended to W9 (May 8) — downstream items shifted accordingly
+              Revised: Spr 19 Dev, M2 Dev, QA Spr 17+18, QA M1 ends W8 (May 10) — downstream items shifted accordingly
             </p>
           </div>
 
