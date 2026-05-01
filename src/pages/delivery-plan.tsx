@@ -685,7 +685,7 @@ export default function DeliveryPlan() {
               ))}
 
               {/* Dot QA→Staging Points (1 week 2 days from QA start) */}
-              {show.dot && fr("dot-qa-staging") && releases.dotReleases.filter(d => d.qaStart !== null).map((d, i) => {
+              {show.dot && fr("dot-qa-staging") && releases.dotReleases.filter((d): d is typeof d & { qaStart: number } => d.qaStart !== null).map((d, i) => {
                 const stagingWeek = d.qaStart + 1 + 2/7; // 1 week + 2 days = 9/7 ≈ 1.2857 weeks
                 if (stagingWeek > WEEKS) return null;
                 return <ReleasePoint key={`dqs-${i}`} x={wX(stagingWeek) - 2} y={fr("dot-qa-staging")!.y + RH / 2} label={`Stg ${d.name}`} color={COLORS.dotQA} />;
