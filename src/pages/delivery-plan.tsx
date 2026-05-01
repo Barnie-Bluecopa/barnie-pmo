@@ -475,8 +475,16 @@ export default function DeliveryPlan() {
   if (show.hot) add("hot-qa", "Hot Patch (QA)", "Weekly", COLORS.hotPatchQA);
   if (show.dot) add("dot-qa", "Dot Release (QA)", "Dev − 1", COLORS.dotQA);
   if (show.major) add("major-qa", "Major (QA)", "4-Week Blocks", COLORS.majorQA);
-  if (show.dot) { cy += 4; add("dot-rel", "Dot Release Points", "", COLORS.accent); }
-  if (show.major) { if (!show.dot) cy += 4; add("major-rel", "Major Release Points", "", COLORS.majorQA); }
+  if (show.dot) { 
+    cy += 4; 
+    add("dot-qa-staging", "Dot(QA->Staging)", "", COLORS.dotQA); 
+    add("dot-rel", "Dot Release Points", "", COLORS.accent); 
+  }
+  if (show.major) { 
+    if (!show.dot) cy += 4; 
+    add("major-qa-staging", "Major(QA->Staging)", "", COLORS.majorQA); 
+    add("major-rel", "Major Release Points", "", COLORS.majorQA); 
+  }
 
   const chartHeight = cy + 40;
   const fr = (t: string) => sec.find(s => s.type === t);
@@ -676,6 +684,13 @@ export default function DeliveryPlan() {
                   opacity={d.isQALegacy ? 0.85 : 1} dashed={d.isQALegacy} />
               ))}
 
+              {/* Dot QA→Staging Points (1 week 2 days from QA start) */}
+              {show.dot && fr("dot-qa-staging") && releases.dotReleases.filter((d): d is typeof d & { qaStart: number } => d.qaStart !== null).map((d, i) => {
+                const stagingWeek = d.qaStart + 1 + 2/7; // 1 week + 2 days = 9/7 ≈ 1.2857 weeks
+                if (stagingWeek > WEEKS) return null;
+                return <ReleasePoint key={`dqs-${i}`} x={wX(stagingWeek) - 2} y={fr("dot-qa-staging")!.y + RH / 2} label={`Stg ${d.name}`} color={COLORS.dotQA} />;
+              })}
+
               {/* Release Points */}
               {show.dot && fr("dot-rel") && releases.dotReleases.filter(d => d.qaStart !== null && d.label).map((d, i) => {
                 const relWeek = d.releasePointWeek ?? (d.qaStart! + d.qaDur!);
@@ -706,6 +721,13 @@ export default function DeliveryPlan() {
                   <Bar key={`mq-${i}`} x={wX(m.qaStart)} width={visibleDur * WW - 3} y={fr("major-qa")!.y + (RH - BH) / 2} height={BH}
                     color={COLORS.majorQA} label={`QA ${m.name}`} />
                 );
+              })}
+
+              {/* Major QA→Staging Points (3 weeks from QA start) */}
+              {show.major && fr("major-qa-staging") && releases.majorReleases.map((m, i) => {
+                const stagingWeek = m.qaStart + 3;
+                if (stagingWeek > WEEKS) return null;
+                return <ReleasePoint key={`mqs-${i}`} x={wX(stagingWeek) - 2} y={fr("major-qa-staging")!.y + RH / 2} label={`Stg ${m.name}`} color={COLORS.majorQA} />;
               })}
 
               {show.major && fr("major-rel") && releases.majorReleases.map((m, i) => {
