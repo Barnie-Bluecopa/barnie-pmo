@@ -695,13 +695,13 @@ export default function DeliveryPlan() {
               {show.dot && fr("dot-rel") && releases.dotReleases.filter(d => d.qaStart !== null && d.label).map((d, i) => {
                 const relWeek = d.releasePointWeek ?? (d.qaStart! + d.qaDur!);
                 if (relWeek > WEEKS) return null;
-                return <ReleasePoint key={`rp-${i}`} x={wX(relWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label!} />;
+                return <ReleasePoint key={`rp-${i}`} x={wX(relWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label!.replace('v1.', 'Spr ')} />;
               })}
 
               {show.dot && fr("dot-rel") && dotRelGhosts.map((d, i) => {
                 const relWeek = d.releasePointWeek ?? (d.qaStart! + d.qaDur!);
                 if (relWeek > WEEKS) return null;
-                return <GhostReleasePoint key={`grp-${i}`} x={wX(relWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label} />;
+                return <GhostReleasePoint key={`grp-${i}`} x={wX(relWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label!.replace('v1.', 'Spr ')} />;
               })}
 
               {/* Major Releases */}
