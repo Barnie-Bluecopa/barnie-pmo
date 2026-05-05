@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import type { MajorItemInfo } from "./api/major-items";
+import { useAuth } from "@/contexts/AuthContext";
 import Head from "next/head";
 
 // ── Type Definitions ─────────────────────────────────────
@@ -251,6 +253,12 @@ const releases = {
 };
 
 // ── Component Props Types ──────────────────────────────────
+interface TooltipState {
+  major: string;
+  x: number;
+  y: number;
+}
+
 interface BarProps {
   x: number;
   width: number;
@@ -262,6 +270,7 @@ interface BarProps {
   radius?: number;
   opacity?: number;
   dashed?: boolean;
+  onInteract?: (e: React.MouseEvent<SVGGElement>) => void;
 }
 
 interface GhostBarProps {
@@ -281,8 +290,12 @@ interface OverlapZoneProps {
 }
 
 // ── Reusable Components ───────────────────────────────────
-const Bar = ({ x, width, y, height, color, label, sublabel, radius = 5, opacity = 1, dashed }: BarProps) => (
-  <g transform={`translate(${x}, ${y})`}>
+const Bar = ({ x, width, y, height, color, label, sublabel, radius = 5, opacity = 1, dashed, onInteract }: BarProps) => (
+  <g
+    transform={`translate(${x}, ${y})`}
+    onClick={onInteract ? (e) => { e.stopPropagation(); onInteract(e); } : undefined}
+    style={{ cursor: onInteract ? 'pointer' : 'default' }}
+  >
     <rect
       x={0} y={0}
       width={Math.max(width, 2)} height={height}
@@ -343,10 +356,15 @@ const OverlapZone = ({ x, y, width, height }: OverlapZoneProps) => (
     fill="rgba(239, 68, 68, 0.15)" stroke="rgba(239, 68, 68, 0.4)" strokeWidth={1} strokeDasharray="6 3" />
 );
 
-const ReleasePoint = ({ x, y, label, color }: { x: number; y: number; label: string; color?: string }) => {
+const ReleasePoint = ({ x, y, label, color, onInteract }: { x: number; y: number; label: string; color?: string; onInteract?: (e: React.MouseEvent<SVGGElement>) => void }) => {
   const fill = color || "#38BDF8";
   return (
-    <g transform={`translate(${x}, ${y})`}>
+    <g
+      transform={`translate(${x}, ${y})`}
+      onClick={onInteract ? (e) => { e.stopPropagation(); onInteract(e); } : undefined}
+      style={{ cursor: onInteract ? 'pointer' : 'default' }}
+    >
+      <polygon points="0,-10 10,0 0,10 -10,0" fill={fill} opacity={0.15} />
       <polygon points="0,-7 7,0 0,7 -7,0" fill={fill} />
       <text x={0} y={14} textAnchor="middle" fill={fill} fontSize={8.5} fontWeight="600"
         fontFamily="'DM Sans', sans-serif">{label}</text>
@@ -364,6 +382,440 @@ const GhostReleasePoint = ({ x, y, label, color }: { x: number; y: number; label
           fontFamily="'DM Sans', sans-serif" opacity={0.7}>{label}</text>
       )}
     </g>
+  );
+};
+
+const statusColor = (status: string) => {
+  const s = status.toLowerCase();
+  if (s === 'done') return '#22C55E';
+  if (s === 'wip') return '#F59E0B';
+  if (s.includes('not started')) return '#94A3B8';
+  if (s === 'tbd') return '#60A5FA';
+  return '#94A3B8';
+};
+
+const MajorTooltip = ({
+  major,
+  items,
+  x,
+  y,
+  colors,
+  onClose,
+  onItemClick,
+}: {
+  major: string;
+  items: MajorItemInfo[];
+  x: number;
+  y: number;
+  colors: ThemeColors;
+  onClose: () => void;
+  onItemClick: (item: MajorItemInfo, ex: number, ey: number) => void;
+}) => {
+  const tooltipWidth = 320;
+  const itemRowH = 52;
+  const estimatedH = Math.min(480, 72 + items.length * itemRowH);
+  const adjustedX = typeof window !== 'undefined' && x + 16 + tooltipWidth > window.innerWidth
+    ? x - tooltipWidth - 16
+    : x + 16;
+  const adjustedY = typeof window !== 'undefined'
+    ? Math.max(10, y + estimatedH > window.innerHeight ? y - estimatedH : y - 10)
+    : y;
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'fixed',
+        top: adjustedY,
+        left: adjustedX,
+        width: tooltipWidth,
+        maxHeight: 480,
+        background: colors.surface,
+        border: `1.5px solid ${colors.surfaceLight}`,
+        borderRadius: 12,
+        boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+        zIndex: 9999,
+        fontFamily: "'DM Sans', sans-serif",
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <div style={{
+        padding: '12px 16px',
+        background: `${colors.majorDev}1A`,
+        borderBottom: `1px solid ${colors.surfaceLight}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 10, height: 10, borderRadius: '50%',
+            background: colors.majorDev, flexShrink: 0,
+          }} />
+          <span style={{ color: colors.majorDev, fontWeight: 700, fontSize: 15 }}>{major}</span>
+          <span style={{ color: colors.textSecondary, fontSize: 11 }}>
+            · {items.length} item{items.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: colors.textMuted,
+            cursor: 'pointer',
+            fontSize: 18,
+            lineHeight: 1,
+            padding: '0 2px',
+          }}
+          aria-label="Close"
+        >×</button>
+      </div>
+      <div style={{ overflowY: 'auto', flex: 1 }}>
+        {items.length === 0 ? (
+          <div style={{ padding: 20, color: colors.textMuted, fontSize: 12, textAlign: 'center' }}>
+            No items found for {major}
+          </div>
+        ) : (
+          items.map((item, i) => (
+            <div
+              key={i}
+              onClick={(e) => { e.stopPropagation(); onItemClick(item, e.clientX, e.clientY); }}
+              style={{
+                padding: '10px 16px',
+                borderBottom: i < items.length - 1 ? `1px solid ${colors.surfaceLight}` : 'none',
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: 10,
+                cursor: item.comments ? 'pointer' : 'default',
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  color: colors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  lineHeight: 1.4,
+                  wordBreak: 'break-word',
+                  textDecoration: item.comments ? 'underline' : 'none',
+                  textDecorationStyle: 'dotted',
+                  textUnderlineOffset: 3,
+                }}>
+                  {item.name}
+                </div>
+                {item.owner && (
+                  <div style={{ color: colors.textMuted, fontSize: 10, marginTop: 3 }}>
+                    {item.owner}
+                  </div>
+                )}
+              </div>
+              {item.status && (
+                <div style={{
+                  padding: '3px 8px',
+                  borderRadius: 5,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  background: `${statusColor(item.status)}22`,
+                  color: statusColor(item.status),
+                  border: `1px solid ${statusColor(item.status)}55`,
+                  flexShrink: 0,
+                  marginTop: 1,
+                  whiteSpace: 'nowrap',
+                }}>
+                  {item.status}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CommentsPopup = ({
+  item,
+  x,
+  y,
+  colors,
+  onClose,
+}: {
+  item: MajorItemInfo;
+  x: number;
+  y: number;
+  colors: ThemeColors;
+  onClose: () => void;
+}) => {
+  const maxW = typeof window !== 'undefined' ? Math.min(540, window.innerWidth - 32) : 540;
+  const left = typeof window !== 'undefined' && x + 16 + maxW > window.innerWidth
+    ? Math.max(8, window.innerWidth - maxW - 16)
+    : x + 16;
+  const top = typeof window !== 'undefined'
+    ? Math.max(8, Math.min(y - 10, window.innerHeight - 120))
+    : y;
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'fixed',
+        top,
+        left,
+        width: maxW,
+        maxHeight: '78vh',
+        background: colors.surface,
+        border: `1.5px solid ${colors.surfaceLight}`,
+        borderRadius: 12,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.45)',
+        zIndex: 10001,
+        fontFamily: "'DM Sans', sans-serif",
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{
+        padding: '12px 16px',
+        background: `${statusColor(item.status)}18`,
+        borderBottom: `1px solid ${colors.surfaceLight}`,
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 10,
+        flexShrink: 0,
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: colors.textPrimary, fontWeight: 700, fontSize: 13, lineHeight: 1.45 }}>
+            {item.name}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+            {item.owner && (
+              <span style={{ color: colors.textMuted, fontSize: 10 }}>{item.owner}</span>
+            )}
+            {item.status && (
+              <span style={{
+                padding: '1px 7px', borderRadius: 4,
+                fontSize: 10, fontWeight: 600,
+                background: `${statusColor(item.status)}22`,
+                color: statusColor(item.status),
+                border: `1px solid ${statusColor(item.status)}44`,
+              }}>
+                {item.status}
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 2px', flexShrink: 0 }}
+          aria-label="Close comments"
+        >×</button>
+      </div>
+      <div style={{ overflowY: 'auto', flex: 1, padding: '14px 16px' }}>
+        {item.comments ? (
+          <p style={{
+            color: colors.textSecondary,
+            fontSize: 12,
+            lineHeight: 1.7,
+            whiteSpace: 'pre-wrap',
+            margin: 0,
+            wordBreak: 'break-word',
+          }}>
+            {item.comments}
+          </p>
+        ) : (
+          <p style={{ color: colors.textMuted, fontSize: 12, margin: 0, textAlign: 'center', paddingTop: 8 }}>
+            No comments for this item.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const OwnerPopup = ({
+  owner,
+  entries,
+  x,
+  y,
+  colors,
+  onClose,
+  onItemClick,
+}: {
+  owner: string;
+  entries: Array<{ item: MajorItemInfo; major: string }>;
+  x: number;
+  y: number;
+  colors: ThemeColors;
+  onClose: () => void;
+  onItemClick: (item: MajorItemInfo, ex: number, ey: number) => void;
+}) => {
+  const tooltipWidth = 340;
+  const adjustedX = typeof window !== 'undefined' && x + 16 + tooltipWidth > window.innerWidth
+    ? x - tooltipWidth - 16
+    : x + 16;
+  const adjustedY = typeof window !== 'undefined'
+    ? Math.max(8, Math.min(y - 10, window.innerHeight - 200))
+    : y;
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'fixed',
+        top: adjustedY,
+        left: adjustedX,
+        width: tooltipWidth,
+        maxHeight: 480,
+        background: colors.surface,
+        border: `1.5px solid ${colors.surfaceLight}`,
+        borderRadius: 12,
+        boxShadow: '0 12px 40px rgba(0,0,0,0.35)',
+        zIndex: 9999,
+        fontFamily: "'DM Sans', sans-serif",
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <div style={{
+        padding: '12px 16px',
+        background: `${colors.accent}15`,
+        borderBottom: `1px solid ${colors.surfaceLight}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: colors.accent }} />
+          <span style={{ color: colors.accent, fontWeight: 700, fontSize: 15 }}>{owner}</span>
+          <span style={{ color: colors.textSecondary, fontSize: 11 }}>
+            · {entries.length} item{entries.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 2px' }} aria-label="Close">×</button>
+      </div>
+      <div style={{ overflowY: 'auto', flex: 1 }}>
+        {entries.map(({ item, major }, i) => (
+          <div
+            key={i}
+            onClick={(e) => { e.stopPropagation(); onItemClick(item, e.clientX, e.clientY); }}
+            style={{
+              padding: '9px 16px',
+              borderBottom: i < entries.length - 1 ? `1px solid ${colors.surfaceLight}` : 'none',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 8,
+              cursor: item.comments ? 'pointer' : 'default',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                color: colors.textPrimary, fontSize: 12, fontWeight: 500, lineHeight: 1.4,
+                wordBreak: 'break-word',
+                textDecoration: item.comments ? 'underline' : 'none',
+                textDecorationStyle: 'dotted',
+                textUnderlineOffset: 3,
+              }}>
+                {item.name}
+              </div>
+              <div style={{ color: colors.textMuted, fontSize: 10, marginTop: 2 }}>{major}</div>
+            </div>
+            {item.status && (
+              <div style={{
+                padding: '2px 7px', borderRadius: 4, fontSize: 10, fontWeight: 600,
+                background: `${statusColor(item.status)}22`, color: statusColor(item.status),
+                border: `1px solid ${statusColor(item.status)}44`, flexShrink: 0, marginTop: 1,
+              }}>
+                {item.status}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const OwnerSummary = ({
+  ownerData,
+  colors,
+  onOwnerClick,
+}: {
+  ownerData: Record<string, Array<{ item: MajorItemInfo; major: string }>>;
+  colors: ThemeColors;
+  onOwnerClick: (owner: string, x: number, y: number) => void;
+}) => {
+  const owners = Object.entries(ownerData).sort((a, b) => b[1].length - a[1].length);
+  if (owners.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: 32, fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ flex: 1, height: 1, background: colors.surfaceLight }} />
+        <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+          Owner Summary
+        </span>
+        <div style={{ flex: 1, height: 1, background: colors.surfaceLight }} />
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+        {owners.map(([owner, entries]) => (
+          <div
+            key={owner}
+            style={{
+              background: colors.surface,
+              border: `1px solid ${colors.surfaceLight}`,
+              borderRadius: 10,
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              minWidth: 160,
+            }}
+          >
+            <div style={{
+              width: 30, height: 30, borderRadius: '50%',
+              background: `${colors.accent}22`,
+              border: `1.5px solid ${colors.accent}44`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <span style={{ color: colors.accent, fontSize: 11, fontWeight: 700 }}>
+                {owner.trim().charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: colors.textPrimary, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {owner}
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); onOwnerClick(owner, e.clientX, e.clientY); }}
+                style={{
+                  background: `${colors.majorDev}22`,
+                  border: `1px solid ${colors.majorDev}44`,
+                  color: colors.majorDev,
+                  borderRadius: 4,
+                  padding: '1px 8px',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  marginTop: 3,
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                {entries.length} item{entries.length !== 1 ? 's' : ''}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
@@ -438,8 +890,64 @@ const ThemeToggle = ({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => 
 
 // ── Main Component ─────────────────────────────────────────
 export default function DeliveryPlan() {
+  const { user, signOut } = useAuth();
   const [active, setActive] = useState<ActiveTiers>({ hot: true, dot: true, major: true });
   const [theme, setTheme] = useState<Theme>('dark');
+  const [majorItems, setMajorItems] = useState<Record<string, MajorItemInfo[]>>({});
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [commentsPopup, setCommentsPopup] = useState<{ item: MajorItemInfo; x: number; y: number } | null>(null);
+  const [ownerPopup, setOwnerPopup] = useState<{ owner: string; x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const loadItems = () =>
+      fetch('/api/major-items')
+        .then((r) => r.json())
+        .then((d) => { if (d.items) setMajorItems(d.items); })
+        .catch(() => {});
+    loadItems();
+    const interval = setInterval(loadItems, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const anyOpen = !!(tooltip || ownerPopup || commentsPopup);
+    if (!anyOpen) return;
+    const dismiss = () => {
+      setTooltip(null);
+      setOwnerPopup(null);
+      setCommentsPopup(null);
+    };
+    window.addEventListener('click', dismiss);
+    return () => window.removeEventListener('click', dismiss);
+  }, [!!tooltip, !!ownerPopup, !!commentsPopup]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ownerData = useMemo(() => {
+    const map: Record<string, Array<{ item: MajorItemInfo; major: string }>> = {};
+    Object.entries(majorItems).forEach(([major, items]) => {
+      items.forEach((item) => {
+        item.owner
+          .split(',')
+          .map((o) => o.trim())
+          .filter(Boolean)
+          .forEach((owner) => {
+            if (!map[owner]) map[owner] = [];
+            map[owner].push({ item, major });
+          });
+      });
+    });
+    return map;
+  }, [majorItems]);
+
+  const handleItemClick = (item: MajorItemInfo, x: number, y: number) => {
+    setCommentsPopup({ item, x, y });
+  };
+
+  const handleMajorInteract = (majorName: string) => (e: React.MouseEvent<SVGGElement>) => {
+    setCommentsPopup(null);
+    setTooltip((prev) =>
+      prev?.major === majorName ? null : { major: majorName, x: e.clientX, y: e.clientY }
+    );
+  };
 
   const COLORS = theme === 'dark' ? darkTheme : lightTheme;
 
@@ -525,6 +1033,37 @@ export default function DeliveryPlan() {
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+      {user && (
+        <div style={{
+          position: 'fixed', top: 20, right: 130, zIndex: 1000,
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: COLORS.surface,
+          border: `1.5px solid ${COLORS.surfaceLight}`,
+          borderRadius: 8,
+          padding: '6px 12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          fontFamily: "'DM Sans', sans-serif",
+        }}>
+          {user.photoURL && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.photoURL} alt="" width={22} height={22} style={{ borderRadius: '50%' }} />
+          )}
+          <span style={{ color: COLORS.textSecondary, fontSize: 12, fontWeight: 500, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {user.displayName ?? user.email}
+          </span>
+          <button
+            onClick={signOut}
+            style={{
+              background: 'none', border: `1px solid ${COLORS.surfaceLight}`,
+              borderRadius: 6, padding: '2px 8px',
+              color: COLORS.textMuted, fontSize: 11, fontWeight: 600,
+              cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
       <div style={{ background: COLORS.bg, minHeight: "100vh", padding: "24px 12px", fontFamily: "'DM Sans', sans-serif" }} className="responsive-container">
         <div style={{ maxWidth: 2340, margin: "0 auto" }} className="w-full px-2 md:px-4">
           <div className="text-center mb-4 md:mb-6">
@@ -710,7 +1249,7 @@ export default function DeliveryPlan() {
                 const visibleDur = Math.min(m.devDur, WEEKS - m.devStart);
                 return (
                   <Bar key={`md-${i}`} x={wX(m.devStart)} width={visibleDur * WW - 3} y={fr("major-dev")!.y + (RH - BH) / 2} height={BH}
-                    color={COLORS.majorDev} label={m.name} />
+                    color={COLORS.majorDev} label={m.name} onInteract={handleMajorInteract(m.name)} />
                 );
               })}
 
@@ -719,7 +1258,7 @@ export default function DeliveryPlan() {
                 const visibleDur = Math.min(m.qaDur, WEEKS - m.qaStart);
                 return (
                   <Bar key={`mq-${i}`} x={wX(m.qaStart)} width={visibleDur * WW - 3} y={fr("major-qa")!.y + (RH - BH) / 2} height={BH}
-                    color={COLORS.majorQA} label={`QA ${m.name}`} />
+                    color={COLORS.majorQA} label={`QA ${m.name}`} onInteract={handleMajorInteract(m.name)} />
                 );
               })}
 
@@ -727,13 +1266,13 @@ export default function DeliveryPlan() {
               {show.major && fr("major-qa-staging") && releases.majorReleases.map((m, i) => {
                 const stagingWeek = m.qaStart + 3;
                 if (stagingWeek > WEEKS) return null;
-                return <ReleasePoint key={`mqs-${i}`} x={wX(stagingWeek) - 2} y={fr("major-qa-staging")!.y + RH / 2} label={`Stg ${m.name}`} color={COLORS.majorQA} />;
+                return <ReleasePoint key={`mqs-${i}`} x={wX(stagingWeek) - 2} y={fr("major-qa-staging")!.y + RH / 2} label={`Stg ${m.name}`} color={COLORS.majorQA} onInteract={handleMajorInteract(m.name)} />;
               })}
 
               {show.major && fr("major-rel") && releases.majorReleases.map((m, i) => {
                 const relWeek = m.qaStart + m.qaDur;
                 if (relWeek > WEEKS) return null;
-                return <ReleasePoint key={`mrp-${i}`} x={wX(relWeek) - 2} y={fr("major-rel")!.y + RH / 2} label={m.name} color={COLORS.majorQA} />;
+                return <ReleasePoint key={`mrp-${i}`} x={wX(relWeek) - 2} y={fr("major-rel")!.y + RH / 2} label={m.name} color={COLORS.majorQA} onInteract={handleMajorInteract(m.name)} />;
               })}
 
               {show.major && fr("major-rel") && majorRelGhosts.map((m, i) => {
@@ -748,8 +1287,51 @@ export default function DeliveryPlan() {
           <p style={{ textAlign: "center", color: COLORS.textMuted, fontSize: 10.5, marginTop: 20, fontFamily: "'DM Sans', sans-serif" }} className="text-xs md:text-sm">
             Sprint Planning · Revised April 28, 2026 · Bluecopa · March 2026 – December 2026 · Ghost outlines = original planned positions
           </p>
+
+          <OwnerSummary
+            ownerData={ownerData}
+            colors={COLORS}
+            onOwnerClick={(owner, x, y) => {
+              setCommentsPopup(null);
+              setOwnerPopup((prev) => prev?.owner === owner ? null : { owner, x, y });
+            }}
+          />
         </div>
       </div>
+
+      {tooltip && (
+        <MajorTooltip
+          major={tooltip.major}
+          items={majorItems[tooltip.major] ?? []}
+          x={tooltip.x}
+          y={tooltip.y}
+          colors={COLORS}
+          onClose={() => { setTooltip(null); setCommentsPopup(null); }}
+          onItemClick={handleItemClick}
+        />
+      )}
+
+      {ownerPopup && (
+        <OwnerPopup
+          owner={ownerPopup.owner}
+          entries={ownerData[ownerPopup.owner] ?? []}
+          x={ownerPopup.x}
+          y={ownerPopup.y}
+          colors={COLORS}
+          onClose={() => { setOwnerPopup(null); setCommentsPopup(null); }}
+          onItemClick={handleItemClick}
+        />
+      )}
+
+      {commentsPopup && (
+        <CommentsPopup
+          item={commentsPopup.item}
+          x={commentsPopup.x}
+          y={commentsPopup.y}
+          colors={COLORS}
+          onClose={() => setCommentsPopup(null)}
+        />
+      )}
     </>
   );
 }
