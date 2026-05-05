@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, Auth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -10,5 +10,13 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+// Firebase Auth is browser-only. On the server (SSR / build) we return a
+// placeholder so imports don't throw — actual auth calls only happen in
+// useEffect / click handlers which never run server-side.
+function initAuth(): Auth {
+  if (typeof window === 'undefined') return null as unknown as Auth;
+  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  return getAuth(app);
+}
+
+export const auth = initAuth();
