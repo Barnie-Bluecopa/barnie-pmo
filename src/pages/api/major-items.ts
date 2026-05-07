@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const SHEET_ID = '1NpeTSbiIi9E7e80TSyrYUmKK0VpTL5tt';
-const GID = '1413647043';
+const SHEET_ID = process.env.GOOGLE_SHEET_ID ?? '';
+const GID = process.env.GOOGLE_SHEET_GID ?? '';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
 
 export interface MajorItemInfo {
