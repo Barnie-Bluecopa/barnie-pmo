@@ -752,7 +752,7 @@ const OwnerPopup = ({
                   color: role === 'primary' ? colors.majorDev : colors.accent,
                   border: `1px solid ${role === 'primary' ? colors.majorDev : colors.accent}44`,
                 }}>
-                  {role === 'primary' ? 'Primary' : 'Secondary'}
+                  {role === 'primary' ? 'P' : 'S'}
                 </span>
               </div>
             </div>
@@ -809,37 +809,37 @@ const OwnerSummary = ({
           </span>
         )}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {owners.map(([owner, entries]) => (
           <div
             key={owner}
             style={{
               background: colors.surface,
               border: `1px solid ${colors.surfaceLight}`,
-              borderRadius: 10,
-              padding: '10px 14px',
+              borderRadius: 6,
+              padding: '4px 7px',
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
-              minWidth: 180,
+              gap: 6,
+              minWidth: 110,
             }}
           >
             <div style={{
-              width: 30, height: 30, borderRadius: '50%',
+              width: 18, height: 18, borderRadius: '50%',
               background: `${colors.accent}22`,
               border: `1.5px solid ${colors.accent}44`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <span style={{ color: colors.accent, fontSize: 11, fontWeight: 700 }}>
+              <span style={{ color: colors.accent, fontSize: 9, fontWeight: 700 }}>
                 {owner.trim().charAt(0).toUpperCase()}
               </span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: colors.textPrimary, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>
+              <div style={{ color: colors.textPrimary, fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
                 {owner}
               </div>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                 {(() => {
                   const primaryCount = entries.filter(e => e.role === 'primary').length;
                   const secondaryCount = entries.filter(e => e.role === 'secondary').length;
@@ -848,31 +848,33 @@ const OwnerSummary = ({
                       {primaryCount > 0 && (
                         <button
                           onClick={(e) => { e.stopPropagation(); onOwnerClick(owner, e.clientX, e.clientY); }}
+                          title="Primary owner"
                           style={{
                             background: `${colors.majorDev}22`,
                             border: `1px solid ${colors.majorDev}44`,
                             color: colors.majorDev,
-                            borderRadius: 4, padding: '1px 7px',
-                            fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                            borderRadius: 3, padding: '0px 5px',
+                            fontSize: 9, fontWeight: 700, cursor: 'pointer',
                             fontFamily: "'DM Sans', sans-serif",
                           }}
                         >
-                          {primaryCount} primary
+                          {primaryCount}P
                         </button>
                       )}
                       {secondaryCount > 0 && (
                         <button
                           onClick={(e) => { e.stopPropagation(); onOwnerClick(owner, e.clientX, e.clientY); }}
+                          title="Secondary owner"
                           style={{
                             background: `${colors.accent}15`,
                             border: `1px solid ${colors.accent}44`,
                             color: colors.accent,
-                            borderRadius: 4, padding: '1px 7px',
-                            fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                            borderRadius: 3, padding: '0px 5px',
+                            fontSize: 9, fontWeight: 700, cursor: 'pointer',
                             fontFamily: "'DM Sans', sans-serif",
                           }}
                         >
-                          {secondaryCount} secondary
+                          {secondaryCount}S
                         </button>
                       )}
                     </>
