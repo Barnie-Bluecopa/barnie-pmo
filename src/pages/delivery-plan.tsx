@@ -387,10 +387,13 @@ const GhostReleasePoint = ({ x, y, label, color }: { x: number; y: number; label
 
 const statusColor = (status: string) => {
   const s = status.toLowerCase();
-  if (s === 'done') return '#22C55E';
-  if (s === 'wip') return '#F59E0B';
-  if (s.includes('not started')) return '#94A3B8';
-  if (s === 'tbd') return '#60A5FA';
+  if (s === 'done' || s.includes('completed')) return '#22C55E';
+  if (s.includes('blocked')) return '#EF4444';
+  if (s.includes('testing') || s.includes('in qa')) return '#A78BFA';
+  if (s.includes('design in progress')) return '#60A5FA';
+  if (s.includes('discovery in progress')) return '#38BDF8';
+  if (s.includes('in progress') || s === 'wip') return '#F59E0B';
+  if (s.includes('not started') || s === 'tbd') return '#94A3B8';
   return '#94A3B8';
 };
 
