@@ -6,7 +6,8 @@ const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?forma
 
 export interface MajorItemInfo {
   name: string;
-  owner: string;
+  primaryOwner: string;
+  secondaryOwner: string;
   status: string;
   comments: string;
 }
@@ -16,47 +17,47 @@ export interface MajorItemInfo {
 // Make the sheet viewable to anyone with the link for live updates.
 const FALLBACK: Record<string, MajorItemInfo[]> = {
   M1: [
-    { comments: '', name: 'Solutions Framework (Full Solution Capability)', owner: 'Anusha, Mahipat', status: 'Testing in Progress in QA' },
+    { comments: '', name: 'Solutions Framework (Full Solution Capability)', primaryOwner: 'Anusha', secondaryOwner: 'Mahipat', status: 'Testing in Progress in QA' },
   ],
   M2: [
-    { comments: '', name: 'Samyx Agents (Harness)', owner: 'Satya, Mahipat, Bipul, Ravi', status: 'Dev to QA Deployment Blocked' },
-    { comments: '', name: 'Self-healing file drop flows (Agentic File handling)', owner: 'Ravi, Mahipat', status: 'Dev In Progress' },
-    { comments: '', name: 'Manual migration assistant (Assembly)', owner: 'Ravi', status: 'Dev In Progress' },
-    { comments: '', name: 'Cash & Collections (O2C) Solution templates', owner: 'Mahipat, Ravi', status: 'Dev Completed' },
-    { comments: '', name: 'Policy Engine', owner: 'Mahipat', status: 'Dev Completed' },
-    { comments: '', name: 'FX IO - Refactor', owner: 'Phani, Manohar', status: 'Dev In Progress' },
-    { comments: '', name: 'FX to IBis Library', owner: 'Phani, Manohar', status: 'Dev In Progress' },
-    { comments: '', name: 'Regression Assurance (superset of BRAT)', owner: 'Kiran, Yogesh', status: 'Design in Progress' },
-    { comments: '', name: 'Samyx Build Agents (Agent-led implementations)', owner: 'Satya, Ravi', status: 'Dev Completed' },
-    { comments: '', name: 'R2R Solution (Deloitte)', owner: 'Mahipat, Ravi, Anusha', status: 'Design in Progress' },
+    { comments: '', name: 'Samyx Agents (Harness)', primaryOwner: 'Satya', secondaryOwner: 'Mahipat, Bipul, Ravi', status: 'Dev to QA Deployment Blocked' },
+    { comments: '', name: 'Self-healing file drop flows (Agentic File handling)', primaryOwner: 'Ravi', secondaryOwner: 'Mahipat', status: 'Dev In Progress' },
+    { comments: '', name: 'Manual migration assistant (Assembly)', primaryOwner: 'Ravi', secondaryOwner: '', status: 'Dev In Progress' },
+    { comments: '', name: 'Cash & Collections (O2C) Solution templates', primaryOwner: 'Mahipat', secondaryOwner: 'Ravi', status: 'Dev Completed' },
+    { comments: '', name: 'Policy Engine', primaryOwner: 'Mahipat', secondaryOwner: '', status: 'Dev Completed' },
+    { comments: '', name: 'FX IO - Refactor', primaryOwner: 'Phani', secondaryOwner: 'Manohar', status: 'Dev In Progress' },
+    { comments: '', name: 'FX to IBis Library', primaryOwner: 'Phani', secondaryOwner: 'Manohar', status: 'Dev In Progress' },
+    { comments: '', name: 'Regression Assurance (superset of BRAT)', primaryOwner: 'Kiran', secondaryOwner: 'Yogesh', status: 'Design in Progress' },
+    { comments: '', name: 'Samyx Build Agents (Agent-led implementations)', primaryOwner: 'Satya', secondaryOwner: 'Ravi', status: 'Dev Completed' },
+    { comments: '', name: 'R2R Solution (Deloitte)', primaryOwner: 'Mahipat', secondaryOwner: 'Ravi, Anusha', status: 'Design in Progress' },
   ],
   M3: [
-    { comments: '', name: 'Samyx Recon - Exception classification', owner: 'Anusha, Yogesh, Satya', status: 'Dev In Progress' },
-    { comments: '', name: 'Debug Studio - Faster debugging', owner: 'Bipul', status: 'Dev In Progress' },
-    { comments: '', name: 'Flexible AI ready Reporting Layer', owner: 'Phani, Yogesh, Ravi, Satya, Sagar', status: 'Dev In Progress' },
-    { comments: '', name: 'Marketplace ITGC Controls and Certification', owner: 'Kalyan, Bipul', status: 'Blocked in Dev' },
-    { comments: '', name: 'Samyx Narrative - MIS Q&A & drill-down', owner: 'Phani, Yogesh, Ravi, Sagar', status: 'Dev In Progress' },
-    { comments: '', name: 'Samyx Extract (Extract data from contracts/invoices)', owner: 'Kiran, Ravi, Satya', status: 'Dev In Progress' },
+    { comments: '', name: 'Samyx Recon - Exception classification', primaryOwner: 'Anusha', secondaryOwner: 'Yogesh, Satya', status: 'Dev In Progress' },
+    { comments: '', name: 'Debug Studio - Faster debugging', primaryOwner: 'Bipul', secondaryOwner: '', status: 'Dev In Progress' },
+    { comments: '', name: 'Flexible AI ready Reporting Layer', primaryOwner: 'Phani', secondaryOwner: 'Yogesh, Ravi, Satya, Sagar', status: 'Dev In Progress' },
+    { comments: '', name: 'Marketplace ITGC Controls and Certification', primaryOwner: 'Kalyan', secondaryOwner: 'Bipul', status: 'Blocked in Dev' },
+    { comments: '', name: 'Samyx Narrative - MIS Q&A & drill-down', primaryOwner: 'Phani', secondaryOwner: 'Yogesh, Ravi, Sagar', status: 'Dev In Progress' },
+    { comments: '', name: 'Samyx Extract (Extract data from contracts/invoices)', primaryOwner: 'Kiran', secondaryOwner: 'Ravi, Satya', status: 'Dev In Progress' },
   ],
   M4: [
-    { comments: '', name: 'SOX Controls and Governance Primitives', owner: 'Kiran, Satya, Barnie', status: 'Discovery in Progress' },
-    { comments: '', name: 'Evidence / Samyx Evidence (Business Transaction lineage)', owner: 'Kiran, Ravi, Satya', status: 'Discovery in Progress' },
-    { comments: '', name: 'Samyx Expert (Auto-classify exceptions based on memory)', owner: 'Kiran, Mahipat', status: 'Discovery not started yet' },
-    { comments: '', name: 'Cloud Marketplace for GCP', owner: 'Kalyan, Bipul', status: 'Discovery not started yet' },
+    { comments: '', name: 'SOX Controls and Governance Primitives', primaryOwner: 'Kiran', secondaryOwner: 'Satya, Barnie', status: 'Discovery in Progress' },
+    { comments: '', name: 'Evidence / Samyx Evidence (Business Transaction lineage)', primaryOwner: 'Kiran', secondaryOwner: 'Ravi, Satya', status: 'Discovery in Progress' },
+    { comments: '', name: 'Samyx Expert (Auto-classify exceptions based on memory)', primaryOwner: 'Kiran', secondaryOwner: 'Mahipat', status: 'Discovery not started yet' },
+    { comments: '', name: 'Cloud Marketplace for GCP', primaryOwner: 'Kalyan', secondaryOwner: 'Bipul', status: 'Discovery not started yet' },
   ],
   M5: [
-    { comments: '', name: 'Flexible export templates', owner: 'Phani, Mahipat', status: 'Discovery not started yet' },
-    { comments: '', name: 'P2P solution template', owner: 'Mahipat', status: 'Discovery not started yet' },
+    { comments: '', name: 'Flexible export templates', primaryOwner: 'Phani', secondaryOwner: 'Mahipat', status: 'Discovery not started yet' },
+    { comments: '', name: 'P2P solution template', primaryOwner: 'Mahipat', secondaryOwner: '', status: 'Discovery not started yet' },
   ],
   M6: [
-    { comments: '', name: 'Map existing Excel workings', owner: 'Phani, Mahipat', status: 'Discovery not started yet' },
-    { comments: '', name: 'Compliance Certification for AWS', owner: 'Kalyan', status: 'Discovery not started yet' },
-    { comments: '', name: 'Cloud marketplace AWS', owner: 'Kalyan, Bipul', status: 'Discovery not started yet' },
-    { comments: '', name: 'Central AI assistant integration', owner: 'Mahipat, Ravi', status: 'Discovery not started yet' },
+    { comments: '', name: 'Map existing Excel workings', primaryOwner: 'Phani', secondaryOwner: 'Mahipat', status: 'Discovery not started yet' },
+    { comments: '', name: 'Compliance Certification for AWS', primaryOwner: 'Kalyan', secondaryOwner: '', status: 'Discovery not started yet' },
+    { comments: '', name: 'Cloud marketplace AWS', primaryOwner: 'Kalyan', secondaryOwner: 'Bipul', status: 'Discovery not started yet' },
+    { comments: '', name: 'Central AI assistant integration', primaryOwner: 'Mahipat', secondaryOwner: 'Ravi', status: 'Discovery not started yet' },
   ],
   M7: [
-    { comments: '', name: 'Compliance Certification for Azure', owner: 'Kalyan, Bipul', status: 'Discovery not started yet' },
-    { comments: '', name: 'Cloud Marketplace for Azure', owner: 'Kalyan, Bipul', status: 'Discovery not started yet' },
+    { comments: '', name: 'Compliance Certification for Azure', primaryOwner: 'Kalyan', secondaryOwner: 'Bipul', status: 'Discovery not started yet' },
+    { comments: '', name: 'Cloud Marketplace for Azure', primaryOwner: 'Kalyan', secondaryOwner: 'Bipul', status: 'Discovery not started yet' },
   ],
 };
 
@@ -126,10 +127,11 @@ async function fetchLiveItems(): Promise<Record<string, MajorItemInfo[]> | null>
       if (!major || !/^M\d+$/.test(major)) continue;
       if (!majorItems[major]) majorItems[major] = [];
       majorItems[major].push({
-        name: cells[0],          // Column A
-        owner: cells[8] || '',   // Column I
-        status: cells[9] || '',  // Column J
-        comments: cells[24] || '', // Column Y
+        name: cells[0],                // Column A
+        primaryOwner: cells[8] || '',  // Column I
+        secondaryOwner: cells[9] || '', // Column J
+        status: cells[10] || '',       // Column K
+        comments: cells[25] || '',     // Column Z
       });
     }
     return majorItems;

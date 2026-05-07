@@ -510,9 +510,14 @@ const MajorTooltip = ({
                 }}>
                   {item.name}
                 </div>
-                {item.owner && (
+                {item.primaryOwner && (
                   <div style={{ color: colors.textMuted, fontSize: 10, marginTop: 3 }}>
-                    {item.owner}
+                    <span style={{ color: colors.accent, fontWeight: 600 }}>Primary: </span>{item.primaryOwner}
+                  </div>
+                )}
+                {item.secondaryOwner && (
+                  <div style={{ color: colors.textMuted, fontSize: 10, marginTop: 1 }}>
+                    <span style={{ fontWeight: 600 }}>Secondary: </span>{item.secondaryOwner}
                   </div>
                 )}
               </div>
@@ -596,8 +601,16 @@ const CommentsPopup = ({
             {item.name}
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-            {item.owner && (
-              <span style={{ color: colors.textMuted, fontSize: 10 }}>{item.owner}</span>
+            {item.primaryOwner && (
+              <span style={{ color: colors.textMuted, fontSize: 10 }}>
+                <span style={{ color: colors.accent, fontWeight: 600 }}>Primary: </span>{item.primaryOwner}
+              </span>
+            )}
+            {item.secondaryOwner && (
+              <span style={{ color: colors.textMuted, fontSize: 10 }}>
+                {item.primaryOwner && ' · '}
+                <span style={{ fontWeight: 600 }}>Secondary: </span>{item.secondaryOwner}
+              </span>
             )}
             {item.status && (
               <span style={{
@@ -650,7 +663,7 @@ const OwnerPopup = ({
   onItemClick,
 }: {
   owner: string;
-  entries: Array<{ item: MajorItemInfo; major: string }>;
+  entries: Array<{ item: MajorItemInfo; major: string; role: 'primary' | 'secondary' }>;
   x: number;
   y: number;
   colors: ThemeColors;
@@ -704,7 +717,7 @@ const OwnerPopup = ({
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 2px' }} aria-label="Close">×</button>
       </div>
       <div style={{ overflowY: 'auto', flex: 1 }}>
-        {entries.map(({ item, major }, i) => (
+        {entries.map(({ item, major, role }, i) => (
           <div
             key={i}
             onClick={(e) => { e.stopPropagation(); onItemClick(item, e.clientX, e.clientY); }}
@@ -728,7 +741,17 @@ const OwnerPopup = ({
               }}>
                 {item.name}
               </div>
-              <div style={{ color: colors.textMuted, fontSize: 10, marginTop: 2 }}>{major}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                <span style={{ color: colors.textMuted, fontSize: 10 }}>{major}</span>
+                <span style={{
+                  padding: '1px 5px', borderRadius: 3, fontSize: 9, fontWeight: 700,
+                  background: role === 'primary' ? `${colors.majorDev}22` : `${colors.accent}15`,
+                  color: role === 'primary' ? colors.majorDev : colors.accent,
+                  border: `1px solid ${role === 'primary' ? colors.majorDev : colors.accent}44`,
+                }}>
+                  {role === 'primary' ? 'Primary' : 'Secondary'}
+                </span>
+              </div>
             </div>
             {item.status && (
               <div style={{
@@ -751,7 +774,7 @@ const OwnerSummary = ({
   colors,
   onOwnerClick,
 }: {
-  ownerData: Record<string, Array<{ item: MajorItemInfo; major: string }>>;
+  ownerData: Record<string, Array<{ item: MajorItemInfo; major: string; role: 'primary' | 'secondary' }>>;
   colors: ThemeColors;
   onOwnerClick: (owner: string, x: number, y: number) => void;
 }) => {
@@ -779,7 +802,7 @@ const OwnerSummary = ({
               display: 'flex',
               alignItems: 'center',
               gap: 10,
-              minWidth: 160,
+              minWidth: 180,
             }}
           >
             <div style={{
@@ -794,26 +817,49 @@ const OwnerSummary = ({
               </span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: colors.textPrimary, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ color: colors.textPrimary, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>
                 {owner}
               </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); onOwnerClick(owner, e.clientX, e.clientY); }}
-                style={{
-                  background: `${colors.majorDev}22`,
-                  border: `1px solid ${colors.majorDev}44`,
-                  color: colors.majorDev,
-                  borderRadius: 4,
-                  padding: '1px 8px',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  marginTop: 3,
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-              >
-                {entries.length} item{entries.length !== 1 ? 's' : ''}
-              </button>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                {(() => {
+                  const primaryCount = entries.filter(e => e.role === 'primary').length;
+                  const secondaryCount = entries.filter(e => e.role === 'secondary').length;
+                  return (
+                    <>
+                      {primaryCount > 0 && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onOwnerClick(owner, e.clientX, e.clientY); }}
+                          style={{
+                            background: `${colors.majorDev}22`,
+                            border: `1px solid ${colors.majorDev}44`,
+                            color: colors.majorDev,
+                            borderRadius: 4, padding: '1px 7px',
+                            fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                            fontFamily: "'DM Sans', sans-serif",
+                          }}
+                        >
+                          {primaryCount} primary
+                        </button>
+                      )}
+                      {secondaryCount > 0 && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onOwnerClick(owner, e.clientX, e.clientY); }}
+                          style={{
+                            background: `${colors.accent}15`,
+                            border: `1px solid ${colors.accent}44`,
+                            color: colors.accent,
+                            borderRadius: 4, padding: '1px 7px',
+                            fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                            fontFamily: "'DM Sans', sans-serif",
+                          }}
+                        >
+                          {secondaryCount} secondary
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         ))}
@@ -925,17 +971,16 @@ export default function DeliveryPlan() {
   }, [!!tooltip, !!ownerPopup, !!commentsPopup]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const ownerData = useMemo(() => {
-    const map: Record<string, Array<{ item: MajorItemInfo; major: string }>> = {};
+    const map: Record<string, Array<{ item: MajorItemInfo; major: string; role: 'primary' | 'secondary' }>> = {};
     Object.entries(majorItems).forEach(([major, items]) => {
       items.forEach((item) => {
-        item.owner
-          .split(',')
-          .map((o) => o.trim())
-          .filter(Boolean)
-          .forEach((owner) => {
+        const add = (names: string, role: 'primary' | 'secondary') =>
+          names.split(',').map(o => o.trim()).filter(Boolean).forEach(owner => {
             if (!map[owner]) map[owner] = [];
-            map[owner].push({ item, major });
+            map[owner].push({ item, major, role });
           });
+        if (item.primaryOwner) add(item.primaryOwner, 'primary');
+        if (item.secondaryOwner) add(item.secondaryOwner, 'secondary');
       });
     });
     return map;
