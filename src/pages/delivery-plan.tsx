@@ -14,6 +14,7 @@ interface ReleaseConfig {
   isQALegacy?: boolean;
   isCombined?: boolean;
   releasePointWeek?: number;
+  stagingPointWeek?: number;
 }
 
 interface MajorReleaseConfig {
@@ -22,6 +23,7 @@ interface MajorReleaseConfig {
   devDur: number;
   qaStart: number;
   qaDur: number;
+  stagingPointWeek?: number;
 }
 
 interface HotPatchConfig {
@@ -129,7 +131,7 @@ const lightTheme: ThemeColors = {
 
 // ── Timeline Constants ─────────────────────────────────────
 const START_DATE = new Date(2026, 2, 9);
-const MAY_8 = 9;
+const MAY_8 = 10;
 const DOT_SHIFT = MAY_8 - 6;
 const MAJOR_DEV_SHIFT = MAY_8 - 8;
 const MAJOR_QA_SHIFT = MAY_8 - 6;
@@ -200,9 +202,9 @@ const dotReleases: ReleaseConfig[] = [
   // Spr 18 Dev: Mar 23 (week 2) to Apr 5 (week 3)
   { name: "Spr 18", devStart: 2, devDur: 2, qaStart: null, qaDur: null, label: "v1.18" },
   // Spr 19 Dev: Starts Apr 20 (week 6), ends May 10 (week 8)
-  { name: "Spr 19", devStart: 6, devDur: 3, qaStart: 9, qaDur: 2, label: "v1.19" },
+  { name: "Spr 19", devStart: 6, devDur: 4, qaStart: 10, qaDur: 2, label: "v1.19" },
   // QA Spr 17+18 combined: Starts Apr 20 (week 6), ends May 10 (week 8)
-  { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 6, qaDur: 3, label: "v1.17+18", isCombined: true },
+  { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 6, qaDur: 4, label: "v1.17+18", isCombined: true, stagingPointWeek: 8 + 2/7 },
   // Spr 20+ (unchanged, start from week 9 = May 11 onwards)
   ...Array.from({ length: 17 }, (_, i): ReleaseConfig => {
     const sp = 20 + i;
@@ -220,9 +222,9 @@ const dotReleases: ReleaseConfig[] = [
 const buildRevisedMajorReleases = (): MajorReleaseConfig[] => {
   const rels: MajorReleaseConfig[] = [];
   // M1: Dev weeks 0-4, QA starts Apr 20 (week 6) ends May 10 (week 8) - delayed
-  rels.push({ name: "M1", devStart: 0, devDur: 4, qaStart: 6, qaDur: 3 });
+  rels.push({ name: "M1", devStart: 0, devDur: 4, qaStart: 6, qaDur: 4, stagingPointWeek: 10 });
   // M2: Dev starts Apr 20 (week 6), ends May 10 (week 8) - delayed
-  rels.push({ name: "M2", devStart: 6, devDur: 3, qaStart: 9, qaDur: 4 });
+  rels.push({ name: "M2", devStart: 6, devDur: 4, qaStart: 10, qaDur: 4 });
   for (let i = 2; i < 6; i++) {
     const n = i + 1;
     const origDevStart = i * 4;
@@ -1329,9 +1331,16 @@ export default function DeliveryPlan() {
 
               {/* Dot QA→Staging Points (1 week 2 days from QA start) */}
               {show.dot && fr("dot-qa-staging") && releases.dotReleases.filter((d): d is typeof d & { qaStart: number } => d.qaStart !== null).map((d, i) => {
-                const stagingWeek = d.qaStart + 1 + 2/7; // 1 week + 2 days = 9/7 ≈ 1.2857 weeks
+                const stagingWeek = d.stagingPointWeek ?? (d.qaStart + 1 + 2/7); // 1 week + 2 days = 9/7 ≈ 1.2857 weeks
                 if (stagingWeek > WEEKS) return null;
                 return <ReleasePoint key={`dqs-${i}`} x={wX(stagingWeek) - 2} y={fr("dot-qa-staging")!.y + RH / 2} label={`Stg ${d.name}`} color={COLORS.dotQA} />;
+              })}
+
+              {/* Dot QA→Staging: previous-plan ghost points (positions before latest changes) */}
+              {show.dot && fr("dot-qa-staging") && releases.dotReleases.filter((d): d is typeof d & { qaStart: number } => d.qaStart !== null && !d.isQALegacy).map((d, i) => {
+                const prevStagingWeek = (d.stagingPointWeek ?? (d.qaStart + 1 + 2/7)) - 1;
+                if (prevStagingWeek < 0 || prevStagingWeek > WEEKS) return null;
+                return <GhostReleasePoint key={`pdqs-${i}`} x={wX(prevStagingWeek) - 2} y={fr("dot-qa-staging")!.y + RH / 2} label={`Stg ${d.name}`} color={COLORS.dotQA} />;
               })}
 
               {/* Release Points */}
@@ -1341,10 +1350,18 @@ export default function DeliveryPlan() {
                 return <ReleasePoint key={`rp-${i}`} x={wX(relWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label!.replace('v1.', 'Spr ')} />;
               })}
 
+              {/* Dot Release Points: original-plan ghost points */}
               {show.dot && fr("dot-rel") && dotRelGhosts.map((d, i) => {
                 const relWeek = d.releasePointWeek ?? (d.qaStart! + d.qaDur!);
                 if (relWeek > WEEKS) return null;
                 return <GhostReleasePoint key={`grp-${i}`} x={wX(relWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label!.replace('v1.', 'Spr ')} />;
+              })}
+
+              {/* Dot Release Points: previous-plan ghost points (positions before latest changes) */}
+              {show.dot && fr("dot-rel") && releases.dotReleases.filter(d => d.qaStart !== null && d.label && !d.isQALegacy).map((d, i) => {
+                const prevRelWeek = (d.releasePointWeek ?? (d.qaStart! + d.qaDur!)) - 1;
+                if (prevRelWeek < 0 || prevRelWeek > WEEKS) return null;
+                return <GhostReleasePoint key={`pprp-${i}`} x={wX(prevRelWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label!.replace('v1.', 'Spr ')} color={COLORS.dotQA} />;
               })}
 
               {/* Major Releases */}
@@ -1368,9 +1385,16 @@ export default function DeliveryPlan() {
 
               {/* Major QA→Staging Points (3 weeks from QA start) */}
               {show.major && fr("major-qa-staging") && releases.majorReleases.map((m, i) => {
-                const stagingWeek = m.qaStart + 3;
+                const stagingWeek = m.stagingPointWeek ?? (m.qaStart + 3);
                 if (stagingWeek > WEEKS) return null;
                 return <ReleasePoint key={`mqs-${i}`} x={wX(stagingWeek) - 2} y={fr("major-qa-staging")!.y + RH / 2} label={`Stg ${m.name}`} color={COLORS.majorQA} onInteract={handleMajorInteract(m.name)} />;
+              })}
+
+              {/* Major QA→Staging: previous-plan ghost points (positions before latest changes) */}
+              {show.major && fr("major-qa-staging") && releases.majorReleases.map((m, i) => {
+                const prevStagingWeek = (m.stagingPointWeek ?? (m.qaStart + 3)) - 1;
+                if (prevStagingWeek < 0 || prevStagingWeek > WEEKS) return null;
+                return <GhostReleasePoint key={`pmqs-${i}`} x={wX(prevStagingWeek) - 2} y={fr("major-qa-staging")!.y + RH / 2} label={`Stg ${m.name}`} color={COLORS.majorQA} />;
               })}
 
               {show.major && fr("major-rel") && releases.majorReleases.map((m, i) => {
@@ -1379,10 +1403,18 @@ export default function DeliveryPlan() {
                 return <ReleasePoint key={`mrp-${i}`} x={wX(relWeek) - 2} y={fr("major-rel")!.y + RH / 2} label={m.name} color={COLORS.majorQA} onInteract={handleMajorInteract(m.name)} />;
               })}
 
+              {/* Major Release Points: original-plan ghost points */}
               {show.major && fr("major-rel") && majorRelGhosts.map((m, i) => {
                 const relWeek = m.qaStart + m.qaDur;
                 if (relWeek > WEEKS) return null;
                 return <GhostReleasePoint key={`gmrp-${i}`} x={wX(relWeek) - 2} y={fr("major-rel")!.y + RH / 2} label={m.name} color={COLORS.majorQA} />;
+              })}
+
+              {/* Major Release Points: previous-plan ghost points (positions before latest changes) */}
+              {show.major && fr("major-rel") && releases.majorReleases.map((m, i) => {
+                const prevRelWeek = m.qaStart + m.qaDur - 1;
+                if (prevRelWeek < 0 || prevRelWeek > WEEKS) return null;
+                return <GhostReleasePoint key={`pmrp-${i}`} x={wX(prevRelWeek) - 2} y={fr("major-rel")!.y + RH / 2} label={m.name} color={COLORS.majorQA} />;
               })}
             </svg>
             </div>
