@@ -136,8 +136,8 @@ const DOT_SHIFT = MAY_8 - 6;
 const MAJOR_DEV_SHIFT = MAY_8 - 8;
 const MAJOR_QA_SHIFT = MAY_8 - 6;
 
-const HOT_PATCH_WEEKS = 43;
-const WEEKS = 44;
+const HOT_PATCH_WEEKS = 77;
+const WEEKS = 78;
 
 const LEFT = 150;
 const RIGHT = 20;
@@ -171,8 +171,8 @@ const origDotReleases: ReleaseConfig[] = [
   { name: "Spr 18 (orig)", devStart: 4, devDur: 2, qaStart: 4, qaDur: 2, label: "v1.18" },
   // Spr 19 original: dev starts Apr 6 (week 4), ends Apr 19 (week 5)
   { name: "Spr 19 (orig)", devStart: 4, devDur: 2, qaStart: 6, qaDur: 2, label: "v1.19" },
-  // Spr 20-36 original: 2-week cadence
-  ...Array.from({ length: 17 }, (_, i): ReleaseConfig => {
+  // Spr 20-52 original: 2-week cadence
+  ...Array.from({ length: 33 }, (_, i): ReleaseConfig => {
     const sp = 20 + i;
     return { name: `Spr ${sp} (orig)`, devStart: (6 + i * 2), devDur: 2, qaStart: (8 + i * 2), qaDur: 2, label: `v1.${sp}` };
   }),
@@ -184,7 +184,7 @@ const buildOrigMajorReleases = (): MajorReleaseConfig[] => {
   releases.push({ name: "M1 (orig)", devStart: 0, devDur: 4, qaStart: 4, qaDur: 4 });
   // Original M2: Dev weeks 4-8 (Apr 6 - May 4), QA weeks 6-10
   releases.push({ name: "M2 (orig)", devStart: 4, devDur: 4, qaStart: 6, qaDur: 4 });
-  for (let i = 2; i < 9; i++) {
+  for (let i = 2; i < 19; i++) {
     const n = i + 1;
     const devStart = i * 4;
     releases.push({ name: `M${n} (orig)`, devStart, devDur: 4, qaStart: devStart + 2, qaDur: 4 });
@@ -205,8 +205,8 @@ const dotReleases: ReleaseConfig[] = [
   { name: "Spr 19", devStart: 6, devDur: 4, qaStart: 10, qaDur: 2, label: "v1.19" },
   // QA Spr 17+18 combined: Starts Apr 20 (week 6), ends May 10 (week 8)
   { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 6, qaDur: 4, label: "v1.17+18", isCombined: true, stagingPointWeek: 8 + 2/7 },
-  // Spr 20+ (unchanged, start from week 9 = May 11 onwards)
-  ...Array.from({ length: 17 }, (_, i): ReleaseConfig => {
+  // Spr 20-52 (2-week cadence)
+  ...Array.from({ length: 33 }, (_, i): ReleaseConfig => {
     const sp = 20 + i;
     return {
       name: `Spr ${sp}`,
@@ -233,7 +233,7 @@ const buildRevisedMajorReleases = (): MajorReleaseConfig[] => {
     rels.push({ name: `M${n}`, devStart: ds, devDur: 4, qaStart: qs, qaDur: 4 });
   }
   const m6DevEnd = rels[5].devStart + rels[5].devDur;
-  for (let k = 0; k < 5; k++) {
+  for (let k = 0; k < 12; k++) {
     const n = 7 + k;
     const ds = m6DevEnd + k * 4;
     rels.push({ name: `M${n}`, devStart: ds, devDur: 4, qaStart: ds + 4, qaDur: 4 });
@@ -1421,7 +1421,7 @@ export default function DeliveryPlan() {
           </div>
 
           <p style={{ textAlign: "center", color: COLORS.textMuted, fontSize: 10.5, marginTop: 20, fontFamily: "'DM Sans', sans-serif" }} className="text-xs md:text-sm">
-            Sprint Planning · Revised April 28, 2026 · Bluecopa · March 2026 – December 2026 · Ghost outlines = original planned positions
+            Sprint Planning · Revised April 28, 2026 · Bluecopa · March 2026 – August 2027 · Ghost outlines = original planned positions
           </p>
         </div>
       </div>
