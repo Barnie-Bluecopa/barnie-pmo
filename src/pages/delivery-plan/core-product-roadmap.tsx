@@ -3,6 +3,7 @@ import type { MajorItemInfo } from "../api/major-items";
 import { useAuth } from "@/contexts/AuthContext";
 import Head from "next/head";
 import Link from "next/link";
+import type { MajorConfig, ItemInfo } from "../../utils/roadmap-export";
 
 // ── Types ────────────────────────────────────────────────
 type Theme = 'dark' | 'light';
@@ -167,6 +168,7 @@ export default function CoreProductRoadmap() {
   const { user, signOut } = useAuth();
   const [theme, setTheme] = useState<Theme>('dark');
   const [majorItems, setMajorItems] = useState<Record<string, MajorItemInfo[]>>({});
+  const [downloading, setDownloading] = useState<null | 'pdf' | 'ppt'>(null);
 
   // refs for header/body/fake-scrollbar horizontal scroll sync
   const headerScrollRef = useRef<HTMLDivElement>(null);
@@ -185,6 +187,27 @@ export default function CoreProductRoadmap() {
     const sl = fakeScrollRef.current?.scrollLeft ?? 0;
     if (bodyScrollRef.current) bodyScrollRef.current.scrollLeft = sl;
     if (headerScrollRef.current) headerScrollRef.current.scrollLeft = sl;
+  };
+
+  const handleDownloadPDF = async () => {
+    setDownloading('pdf');
+    try {
+      const { downloadPDF } = await import('../../utils/roadmap-export');
+      // Cast to compatible types — MajorItemInfo is a superset of ItemInfo
+      downloadPDF(majorReleases as MajorConfig[], majorItems as Record<string, ItemInfo[]>);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const handleDownloadPPT = async () => {
+    setDownloading('ppt');
+    try {
+      const { downloadPPT } = await import('../../utils/roadmap-export');
+      await downloadPPT(majorReleases as MajorConfig[], majorItems as Record<string, ItemInfo[]>);
+    } finally {
+      setDownloading(null);
+    }
   };
 
   useEffect(() => {
@@ -342,17 +365,73 @@ export default function CoreProductRoadmap() {
             </p>
           </div>
 
-          {/* Legend */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 14, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            {[{ color: COLORS.majorDev, label: "Major (Dev)" }, { color: COLORS.majorQA, label: "Major (QA)" }].map(it => (
-              <div key={it.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 12, height: 10, borderRadius: 3, background: it.color }} />
-                <span style={{ color: COLORS.textSecondary, fontSize: 11 }}>{it.label}</span>
+          {/* Legend + Download buttons */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+            {/* Legend */}
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+              {[{ color: COLORS.majorDev, label: "Major (Dev)" }, { color: COLORS.majorQA, label: "Major (QA)" }].map(it => (
+                <div key={it.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 12, height: 10, borderRadius: 3, background: it.color }} />
+                  <span style={{ color: COLORS.textSecondary, fontSize: 11 }}>{it.label}</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 14, height: 10, borderRadius: 3, background: COLORS.ghost, border: `1.2px dashed ${COLORS.ghostStroke}` }} />
+                <span style={{ color: COLORS.textSecondary, fontSize: 11 }}>Original Position</span>
               </div>
-            ))}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: 14, height: 10, borderRadius: 3, background: COLORS.ghost, border: `1.2px dashed ${COLORS.ghostStroke}` }} />
-              <span style={{ color: COLORS.textSecondary, fontSize: 11 }}>Original Position</span>
+            </div>
+
+            {/* Download buttons */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              {/* PDF */}
+              <button
+                onClick={handleDownloadPDF}
+                disabled={downloading !== null}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '7px 16px', borderRadius: 8,
+                  border: `1.5px solid ${COLORS.surfaceLight}`,
+                  background: downloading === 'pdf' ? COLORS.surfaceLight : COLORS.surface,
+                  color: downloading === 'pdf' ? COLORS.textMuted : COLORS.textPrimary,
+                  fontWeight: 600, fontSize: 12, cursor: downloading !== null ? 'not-allowed' : 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  transition: 'all 0.2s ease',
+                  opacity: downloading !== null && downloading !== 'pdf' ? 0.5 : 1,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+                </svg>
+                {downloading === 'pdf' ? 'Generating…' : 'Download PDF'}
+              </button>
+
+              {/* PPT */}
+              <button
+                onClick={handleDownloadPPT}
+                disabled={downloading !== null}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '7px 16px', borderRadius: 8,
+                  border: `1.5px solid ${COLORS.surfaceLight}`,
+                  background: downloading === 'ppt' ? COLORS.surfaceLight : COLORS.surface,
+                  color: downloading === 'ppt' ? COLORS.textMuted : COLORS.textPrimary,
+                  fontWeight: 600, fontSize: 12, cursor: downloading !== null ? 'not-allowed' : 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  transition: 'all 0.2s ease',
+                  opacity: downloading !== null && downloading !== 'ppt' ? 0.5 : 1,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2"/>
+                  <path d="M8 21h8M12 17v4"/>
+                  <path d="M9 9h1.5a1.5 1.5 0 0 1 0 3H9v-3zm0 3v2"/>
+                </svg>
+                {downloading === 'ppt' ? 'Generating…' : 'Download PPT'}
+              </button>
             </div>
           </div>
 
