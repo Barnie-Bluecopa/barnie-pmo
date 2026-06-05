@@ -14,6 +14,7 @@ interface ReleaseConfig {
   isQALegacy?: boolean;
   isCombined?: boolean;
   releasePointWeek?: number;
+  stagingPointWeek?: number;
 }
 
 interface MajorReleaseConfig {
@@ -22,6 +23,7 @@ interface MajorReleaseConfig {
   devDur: number;
   qaStart: number;
   qaDur: number;
+  stagingPointWeek?: number;
 }
 
 interface HotPatchConfig {
@@ -129,21 +131,21 @@ const lightTheme: ThemeColors = {
 
 // ── Timeline Constants ─────────────────────────────────────
 const START_DATE = new Date(2026, 2, 9);
-const MAY_8 = 9;
+const MAY_8 = 10;
 const DOT_SHIFT = MAY_8 - 6;
 const MAJOR_DEV_SHIFT = MAY_8 - 8;
 const MAJOR_QA_SHIFT = MAY_8 - 6;
 
-const HOT_PATCH_WEEKS = 43;
-const WEEKS = 44;
+const HOT_PATCH_WEEKS = 77;
+const WEEKS = 78;
 
 const LEFT = 150;
 const RIGHT = 20;
-const TOP = 60;
+const TOP = 44;
 const WW = 48;
-const RH = 46;
-const BH = 24;
-const GAP = 14;
+const RH = 36;
+const BH = 20;
+const GAP = 8;
 
 // ── Helper Functions ───────────────────────────────────────
 const getWeekLabel = (i: number): string => {
@@ -169,8 +171,8 @@ const origDotReleases: ReleaseConfig[] = [
   { name: "Spr 18 (orig)", devStart: 4, devDur: 2, qaStart: 4, qaDur: 2, label: "v1.18" },
   // Spr 19 original: dev starts Apr 6 (week 4), ends Apr 19 (week 5)
   { name: "Spr 19 (orig)", devStart: 4, devDur: 2, qaStart: 6, qaDur: 2, label: "v1.19" },
-  // Spr 20-36 original: 2-week cadence
-  ...Array.from({ length: 17 }, (_, i): ReleaseConfig => {
+  // Spr 20-52 original: 2-week cadence
+  ...Array.from({ length: 33 }, (_, i): ReleaseConfig => {
     const sp = 20 + i;
     return { name: `Spr ${sp} (orig)`, devStart: (6 + i * 2), devDur: 2, qaStart: (8 + i * 2), qaDur: 2, label: `v1.${sp}` };
   }),
@@ -182,7 +184,7 @@ const buildOrigMajorReleases = (): MajorReleaseConfig[] => {
   releases.push({ name: "M1 (orig)", devStart: 0, devDur: 4, qaStart: 4, qaDur: 4 });
   // Original M2: Dev weeks 4-8 (Apr 6 - May 4), QA weeks 6-10
   releases.push({ name: "M2 (orig)", devStart: 4, devDur: 4, qaStart: 6, qaDur: 4 });
-  for (let i = 2; i < 9; i++) {
+  for (let i = 2; i < 19; i++) {
     const n = i + 1;
     const devStart = i * 4;
     releases.push({ name: `M${n} (orig)`, devStart, devDur: 4, qaStart: devStart + 2, qaDur: 4 });
@@ -200,11 +202,11 @@ const dotReleases: ReleaseConfig[] = [
   // Spr 18 Dev: Mar 23 (week 2) to Apr 5 (week 3)
   { name: "Spr 18", devStart: 2, devDur: 2, qaStart: null, qaDur: null, label: "v1.18" },
   // Spr 19 Dev: Starts Apr 20 (week 6), ends May 10 (week 8)
-  { name: "Spr 19", devStart: 6, devDur: 3, qaStart: 9, qaDur: 2, label: "v1.19" },
+  { name: "Spr 19", devStart: 6, devDur: 4, qaStart: 10, qaDur: 2, label: "v1.19" },
   // QA Spr 17+18 combined: Starts Apr 20 (week 6), ends May 10 (week 8)
-  { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 6, qaDur: 3, label: "v1.17+18", isCombined: true },
-  // Spr 20+ (unchanged, start from week 9 = May 11 onwards)
-  ...Array.from({ length: 17 }, (_, i): ReleaseConfig => {
+  { name: "QA Spr 17+18", devStart: null, devDur: null, qaStart: 6, qaDur: 4, label: "v1.17+18", isCombined: true, stagingPointWeek: 8 + 2/7 },
+  // Spr 20-52 (2-week cadence)
+  ...Array.from({ length: 33 }, (_, i): ReleaseConfig => {
     const sp = 20 + i;
     return {
       name: `Spr ${sp}`,
@@ -220,9 +222,9 @@ const dotReleases: ReleaseConfig[] = [
 const buildRevisedMajorReleases = (): MajorReleaseConfig[] => {
   const rels: MajorReleaseConfig[] = [];
   // M1: Dev weeks 0-4, QA starts Apr 20 (week 6) ends May 10 (week 8) - delayed
-  rels.push({ name: "M1", devStart: 0, devDur: 4, qaStart: 6, qaDur: 3 });
+  rels.push({ name: "M1", devStart: 0, devDur: 4, qaStart: 6, qaDur: 4, stagingPointWeek: 10 });
   // M2: Dev starts Apr 20 (week 6), ends May 10 (week 8) - delayed
-  rels.push({ name: "M2", devStart: 6, devDur: 3, qaStart: 9, qaDur: 4 });
+  rels.push({ name: "M2", devStart: 6, devDur: 4, qaStart: 10, qaDur: 4 });
   for (let i = 2; i < 6; i++) {
     const n = i + 1;
     const origDevStart = i * 4;
@@ -231,7 +233,7 @@ const buildRevisedMajorReleases = (): MajorReleaseConfig[] => {
     rels.push({ name: `M${n}`, devStart: ds, devDur: 4, qaStart: qs, qaDur: 4 });
   }
   const m6DevEnd = rels[5].devStart + rels[5].devDur;
-  for (let k = 0; k < 5; k++) {
+  for (let k = 0; k < 12; k++) {
     const n = 7 + k;
     const ds = m6DevEnd + k * 4;
     rels.push({ name: `M${n}`, devStart: ds, devDur: 4, qaStart: ds + 4, qaDur: 4 });
@@ -310,7 +312,7 @@ const Bar = ({ x, width, y, height, color, label, sublabel, radius = 5, opacity 
       <text
         x={width / 2} y={height / 2 + (sublabel ? -4 : 1)}
         textAnchor="middle" dominantBaseline="middle"
-        fill="#FFF" fontSize={10} fontWeight="600" fontFamily="'DM Sans', sans-serif"
+        fill="#FFF" fontSize={9} fontWeight="600" fontFamily="'DM Sans', sans-serif"
         style={{ pointerEvents: "none" }}
       >
         {label}
@@ -320,7 +322,7 @@ const Bar = ({ x, width, y, height, color, label, sublabel, radius = 5, opacity 
       <text
         x={width / 2} y={height / 2 + 10}
         textAnchor="middle" dominantBaseline="middle"
-        fill="rgba(255,255,255,0.65)" fontSize={8.5} fontFamily="'DM Sans', sans-serif"
+        fill="rgba(255,255,255,0.65)" fontSize={7.5} fontFamily="'DM Sans', sans-serif"
         style={{ pointerEvents: "none" }}
       >
         {sublabel}
@@ -366,7 +368,7 @@ const ReleasePoint = ({ x, y, label, color, onInteract }: { x: number; y: number
     >
       <polygon points="0,-10 10,0 0,10 -10,0" fill={fill} opacity={0.15} />
       <polygon points="0,-7 7,0 0,7 -7,0" fill={fill} />
-      <text x={0} y={14} textAnchor="middle" fill={fill} fontSize={8.5} fontWeight="600"
+      <text x={0} y={12} textAnchor="middle" fill={fill} fontSize={7.5} fontWeight="600"
         fontFamily="'DM Sans', sans-serif">{label}</text>
     </g>
   );
@@ -420,8 +422,9 @@ const MajorTooltip = ({
   const adjustedX = typeof window !== 'undefined' && x + 16 + tooltipWidth > window.innerWidth
     ? x - tooltipWidth - 16
     : x + 16;
+  const popupMaxH = typeof window !== 'undefined' ? Math.min(480, window.innerHeight - 20) : 480;
   const adjustedY = typeof window !== 'undefined'
-    ? Math.max(10, y + estimatedH > window.innerHeight ? y - estimatedH : y - 10)
+    ? Math.max(10, Math.min(y - 10, window.innerHeight - popupMaxH - 10))
     : y;
 
   return (
@@ -517,7 +520,7 @@ const MajorTooltip = ({
                 )}
                 {item.secondaryOwner && (
                   <div style={{ color: colors.textMuted, fontSize: 10, marginTop: 1 }}>
-                    <span style={{ fontWeight: 600 }}>Secondary: </span>{item.secondaryOwner}
+                    <span style={{ color: '#F97316', fontWeight: 600 }}>Secondary: </span>{item.secondaryOwner}
                   </div>
                 )}
               </div>
@@ -562,8 +565,9 @@ const CommentsPopup = ({
   const left = typeof window !== 'undefined' && x + 16 + maxW > window.innerWidth
     ? Math.max(8, window.innerWidth - maxW - 16)
     : x + 16;
+  const commentsMaxH = typeof window !== 'undefined' ? Math.floor(window.innerHeight * 0.78) : 400;
   const top = typeof window !== 'undefined'
-    ? Math.max(8, Math.min(y - 10, window.innerHeight - 120))
+    ? Math.max(8, Math.min(y - 10, window.innerHeight - commentsMaxH - 8))
     : y;
 
   return (
@@ -609,7 +613,7 @@ const CommentsPopup = ({
             {item.secondaryOwner && (
               <span style={{ color: colors.textMuted, fontSize: 10 }}>
                 {item.primaryOwner && ' · '}
-                <span style={{ fontWeight: 600 }}>Secondary: </span>{item.secondaryOwner}
+                <span style={{ color: '#F97316', fontWeight: 600 }}>Secondary: </span>{item.secondaryOwner}
               </span>
             )}
             {item.status && (
@@ -674,8 +678,9 @@ const OwnerPopup = ({
   const adjustedX = typeof window !== 'undefined' && x + 16 + tooltipWidth > window.innerWidth
     ? x - tooltipWidth - 16
     : x + 16;
+  const ownerPopupMaxH = typeof window !== 'undefined' ? Math.min(480, window.innerHeight - 20) : 480;
   const adjustedY = typeof window !== 'undefined'
-    ? Math.max(8, Math.min(y - 10, window.innerHeight - 200))
+    ? Math.max(8, Math.min(y - 10, window.innerHeight - ownerPopupMaxH - 8))
     : y;
 
   return (
@@ -749,7 +754,7 @@ const OwnerPopup = ({
                   color: role === 'primary' ? colors.majorDev : colors.accent,
                   border: `1px solid ${role === 'primary' ? colors.majorDev : colors.accent}44`,
                 }}>
-                  {role === 'primary' ? 'Primary' : 'Secondary'}
+                  {role === 'primary' ? 'P' : 'S'}
                 </span>
               </div>
             </div>
@@ -773,54 +778,70 @@ const OwnerSummary = ({
   ownerData,
   colors,
   onOwnerClick,
+  activeMajor,
 }: {
   ownerData: Record<string, Array<{ item: MajorItemInfo; major: string; role: 'primary' | 'secondary' }>>;
   colors: ThemeColors;
   onOwnerClick: (owner: string, x: number, y: number) => void;
+  activeMajor?: string | null;
 }) => {
-  const owners = Object.entries(ownerData).sort((a, b) => b[1].length - a[1].length);
+  const owners = Object.entries(ownerData)
+    .map(([owner, entries]) => {
+      const filtered = activeMajor ? entries.filter(e => e.major === activeMajor) : entries;
+      return [owner, filtered] as [string, typeof entries];
+    })
+    .filter(([, entries]) => entries.length > 0)
+    .sort((a, b) => b[1].length - a[1].length);
   if (owners.length === 0) return null;
 
   return (
-    <div style={{ marginTop: 32, fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-        <div style={{ flex: 1, height: 1, background: colors.surfaceLight }} />
+    <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
         <span style={{ color: colors.textSecondary, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-          Owner Summary
+          Major Releases Owner Summary
         </span>
-        <div style={{ flex: 1, height: 1, background: colors.surfaceLight }} />
+        {activeMajor && (
+          <span style={{
+            padding: '1px 7px', borderRadius: 4,
+            background: `${colors.majorDev}22`, color: colors.majorDev,
+            border: `1px solid ${colors.majorDev}44`,
+            fontSize: 10, fontWeight: 700,
+          }}>
+            {activeMajor}
+          </span>
+        )}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {owners.map(([owner, entries]) => (
           <div
             key={owner}
             style={{
               background: colors.surface,
               border: `1px solid ${colors.surfaceLight}`,
-              borderRadius: 10,
-              padding: '10px 14px',
+              borderRadius: 6,
+              padding: '4px 7px',
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
-              minWidth: 180,
+              gap: 6,
+              minWidth: 110,
             }}
           >
             <div style={{
-              width: 30, height: 30, borderRadius: '50%',
+              width: 18, height: 18, borderRadius: '50%',
               background: `${colors.accent}22`,
               border: `1.5px solid ${colors.accent}44`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <span style={{ color: colors.accent, fontSize: 11, fontWeight: 700 }}>
+              <span style={{ color: colors.accent, fontSize: 9, fontWeight: 700 }}>
                 {owner.trim().charAt(0).toUpperCase()}
               </span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: colors.textPrimary, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>
+              <div style={{ color: colors.textPrimary, fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
                 {owner}
               </div>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                 {(() => {
                   const primaryCount = entries.filter(e => e.role === 'primary').length;
                   const secondaryCount = entries.filter(e => e.role === 'secondary').length;
@@ -829,31 +850,33 @@ const OwnerSummary = ({
                       {primaryCount > 0 && (
                         <button
                           onClick={(e) => { e.stopPropagation(); onOwnerClick(owner, e.clientX, e.clientY); }}
+                          title="Primary owner"
                           style={{
                             background: `${colors.majorDev}22`,
                             border: `1px solid ${colors.majorDev}44`,
                             color: colors.majorDev,
-                            borderRadius: 4, padding: '1px 7px',
-                            fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                            borderRadius: 3, padding: '0px 5px',
+                            fontSize: 9, fontWeight: 700, cursor: 'pointer',
                             fontFamily: "'DM Sans', sans-serif",
                           }}
                         >
-                          {primaryCount} primary
+                          {primaryCount}P
                         </button>
                       )}
                       {secondaryCount > 0 && (
                         <button
                           onClick={(e) => { e.stopPropagation(); onOwnerClick(owner, e.clientX, e.clientY); }}
+                          title="Secondary owner"
                           style={{
                             background: `${colors.accent}15`,
                             border: `1px solid ${colors.accent}44`,
                             color: colors.accent,
-                            borderRadius: 4, padding: '1px 7px',
-                            fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                            borderRadius: 3, padding: '0px 5px',
+                            fontSize: 9, fontWeight: 700, cursor: 'pointer',
                             fontFamily: "'DM Sans', sans-serif",
                           }}
                         >
-                          {secondaryCount} secondary
+                          {secondaryCount}S
                         </button>
                       )}
                     </>
@@ -1080,6 +1103,43 @@ export default function DeliveryPlan() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
+      <a
+        href="https://docs.google.com/spreadsheets/d/1qrAjggZbtNMZkMMmo7GEuhmz9ch2HhwVdc1Ftpi0GfE/edit?usp=drive_link"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: 'fixed',
+          top: 20,
+          left: 20,
+          zIndex: 1000,
+          padding: '8px 14px',
+          borderRadius: 8,
+          border: `1.5px solid ${COLORS.surfaceLight}`,
+          background: COLORS.surface,
+          color: COLORS.textSecondary,
+          fontWeight: 600,
+          fontSize: 12,
+          cursor: 'pointer',
+          fontFamily: "'DM Sans', sans-serif",
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7,
+          textDecoration: 'none',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          transition: 'all 0.2s ease',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+          <rect x="3" y="3" width="18" height="18" rx="2" fill="#34A853" opacity="0.15" />
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="#34A853" strokeWidth="1.5" />
+          <line x1="3" y1="9" x2="21" y2="9" stroke="#34A853" strokeWidth="1.2" />
+          <line x1="3" y1="15" x2="21" y2="15" stroke="#34A853" strokeWidth="1.2" />
+          <line x1="9" y1="3" x2="9" y2="21" stroke="#34A853" strokeWidth="1.2" />
+          <line x1="15" y1="3" x2="15" y2="21" stroke="#34A853" strokeWidth="1.2" />
+        </svg>
+        <span style={{ color: COLORS.textPrimary }}>Platform Roadmap Features</span>
+      </a>
       <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
       {user && (
         <div style={{
@@ -1112,21 +1172,32 @@ export default function DeliveryPlan() {
           </button>
         </div>
       )}
-      <div style={{ background: COLORS.bg, minHeight: "100vh", padding: "24px 12px", fontFamily: "'DM Sans', sans-serif" }} className="responsive-container">
+      <div style={{ background: COLORS.bg, minHeight: "100vh", padding: "12px 12px", fontFamily: "'DM Sans', sans-serif" }} className="responsive-container">
         <div style={{ maxWidth: 2340, margin: "0 auto" }} className="w-full px-2 md:px-4">
-          <div className="text-center mb-4 md:mb-6">
+          <div className="text-center mb-2">
             <h1 style={{ color: COLORS.textPrimary, fontWeight: 700, margin: 0, letterSpacing: "-0.02em" }} className="text-xl md:text-3xl">
               Three-Tier Release Plan / Resource Overlap View
             </h1>
             <p style={{ color: COLORS.textSecondary, marginTop: 6 }} className="text-sm md:text-base">
               Dev and QA teams grouped to visualize concurrent workload across Hot Patches, Dot Releases & Major Releases
             </p>
-            <p style={{ color: "#F59E0B", marginTop: 4, fontWeight: 600 }} className="text-xs md:text-sm">
-              Revised: Spr 19 Dev, M2 Dev, QA Spr 17+18, QA M1 ends W8 (May 10) — downstream items shifted accordingly
-            </p>
           </div>
 
-          <div className="flex justify-center gap-2 mb-3 flex-wrap">
+          {/* Owner Summary — full width between header and controls */}
+          <div style={{ marginBottom: 16 }}>
+            <OwnerSummary
+              ownerData={ownerData}
+              colors={COLORS}
+              activeMajor={tooltip?.major ?? null}
+              onOwnerClick={(owner, x, y) => {
+                setCommentsPopup(null);
+                setOwnerPopup((prev) => prev?.owner === owner ? null : { owner, x, y });
+              }}
+            />
+          </div>
+
+          {/* Tier buttons (left) + Legend (right) — same row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap', padding: '2px 0' }}>
             <button onClick={setAll} style={{
               borderRadius: 8, border: allActive ? "none" : `1.5px solid ${COLORS.surfaceLight}`,
               background: allActive ? COLORS.accent : COLORS.surface,
@@ -1157,9 +1228,33 @@ export default function DeliveryPlan() {
                 </button>
               );
             })}
-          </div>
 
-          <Legend theme={COLORS} />
+            {/* Spacer pushes legend to extreme right */}
+            <div style={{ flex: 1 }} />
+
+            {/* Legend items at extreme right */}
+            {[
+              { color: COLORS.hotPatch, label: "Hot Patch (Dev)" },
+              { color: COLORS.hotPatchQA, label: "Hot Patch (QA)" },
+              { color: COLORS.dotDev, label: "Dot Release (Dev)" },
+              { color: COLORS.dotQA, label: "Dot Release (QA)" },
+              { color: COLORS.majorDev, label: "Major (Dev)" },
+              { color: COLORS.majorQA, label: "Major (QA)" },
+            ].map(it => (
+              <div key={it.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 12, height: 10, borderRadius: 3, background: it.color, flexShrink: 0 }} />
+                <span style={{ color: COLORS.textSecondary, fontSize: 11, fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }}>{it.label}</span>
+              </div>
+            ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: 14, height: 10, borderRadius: 3, background: COLORS.overlap, border: `1.5px dashed ${COLORS.overlapBorder}`, flexShrink: 0 }} />
+              <span style={{ color: COLORS.textSecondary, fontSize: 11, fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }}>QA Overlap</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: 14, height: 10, borderRadius: 3, background: COLORS.ghost, border: `1.2px dashed ${COLORS.ghostStroke}`, flexShrink: 0 }} />
+              <span style={{ color: COLORS.textSecondary, fontSize: 11, fontFamily: "'DM Sans', sans-serif", whiteSpace: 'nowrap' }}>Original Position</span>
+            </div>
+          </div>
 
           <div className="rounded-xl shadow-lg" style={{ background: COLORS.surface, border: `1px solid ${COLORS.surfaceLight}`, display: 'flex', overflow: 'hidden' }}>
             {/* Left sticky sidebar */}
@@ -1167,8 +1262,8 @@ export default function DeliveryPlan() {
               {sec.map((s, i) => (
                 <div key={`sidebar-${i}`} style={{ position: 'absolute', top: s.y, left: 0, right: 0, height: RH }}>
                   <div style={{ position: 'absolute', left: 6, top: 8, width: 3, height: RH-16, borderRadius: 1.5, background: s.color, opacity: 0.6 }} />
-                  <div style={{ position: 'absolute', left: 16, top: RH/2 - (s.sublabel ? 5 : 0), color: COLORS.textPrimary, fontSize: 11, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>{s.label}</div>
-                  {s.sublabel && <div style={{ position: 'absolute', left: 16, top: RH/2 + 9, color: COLORS.textMuted, fontSize: 9, fontFamily: "'DM Sans', sans-serif" }}>{s.sublabel}</div>}
+                  <div style={{ position: 'absolute', left: 16, top: RH/2 - (s.sublabel ? 5 : 0), color: COLORS.textPrimary, fontSize: 10, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>{s.label}</div>
+                  {s.sublabel && <div style={{ position: 'absolute', left: 16, top: RH/2 + 9, color: COLORS.textMuted, fontSize: 8, fontFamily: "'DM Sans', sans-serif" }}>{s.sublabel}</div>}
                 </div>
               ))}
             </div>
@@ -1192,14 +1287,14 @@ export default function DeliveryPlan() {
                 return (
                   <g key={`mo-${i}`}>
                     <rect x={x} y={TOP - 26} width={w} height={22} rx={4} fill={COLORS.surfaceLight} opacity={0.5} />
-                    <text x={x + w / 2} y={TOP - 12} textAnchor="middle" fill={COLORS.textSecondary} fontSize={10.5} fontWeight="600" fontFamily="'DM Sans', sans-serif">{m.label}</text>
+                    <text x={x + w / 2} y={TOP - 12} textAnchor="middle" fill={COLORS.textSecondary} fontSize={9.5} fontWeight="600" fontFamily="'DM Sans', sans-serif">{m.label}</text>
                   </g>
                 );
               })}
 
               {/* Week labels */}
               {Array.from({ length: WEEKS }, (_, w) => (
-                <text key={`wl-${w}`} x={wX(w) + WW / 2} y={TOP + 4} textAnchor="middle" fill={COLORS.textMuted} fontSize={8} fontFamily="'JetBrains Mono', monospace">{getWeekLabel(w)}</text>
+                <text key={`wl-${w}`} x={wX(w) + WW / 2} y={TOP + 4} textAnchor="middle" fill={COLORS.textMuted} fontSize={7.5} fontFamily="'JetBrains Mono', monospace">{getWeekLabel(w)}</text>
               ))}
 
               {/* Team separator */}
@@ -1207,7 +1302,7 @@ export default function DeliveryPlan() {
                 <g>
                   <line x1={8} y1={separatorY} x2={timelineWidth - 8} y2={separatorY} stroke={COLORS.surfaceLight} strokeWidth={1.5} />
                   <rect x={10} y={separatorY - 10} width={66} height={20} rx={4} fill={COLORS.surface} />
-                  <text x={43} y={separatorY + 1} textAnchor="middle" fill={COLORS.textMuted} fontSize={9} fontWeight="700" fontFamily="'DM Sans', sans-serif">DEV ↔ QA</text>
+                  <text x={43} y={separatorY + 1} textAnchor="middle" fill={COLORS.textMuted} fontSize={8} fontWeight="700" fontFamily="'DM Sans', sans-serif">DEV ↔ QA</text>
                 </g>
               )}
 
@@ -1273,9 +1368,16 @@ export default function DeliveryPlan() {
 
               {/* Dot QA→Staging Points (1 week 2 days from QA start) */}
               {show.dot && fr("dot-qa-staging") && releases.dotReleases.filter((d): d is typeof d & { qaStart: number } => d.qaStart !== null).map((d, i) => {
-                const stagingWeek = d.qaStart + 1 + 2/7; // 1 week + 2 days = 9/7 ≈ 1.2857 weeks
+                const stagingWeek = d.stagingPointWeek ?? (d.qaStart + 1 + 2/7); // 1 week + 2 days = 9/7 ≈ 1.2857 weeks
                 if (stagingWeek > WEEKS) return null;
                 return <ReleasePoint key={`dqs-${i}`} x={wX(stagingWeek) - 2} y={fr("dot-qa-staging")!.y + RH / 2} label={`Stg ${d.name}`} color={COLORS.dotQA} />;
+              })}
+
+              {/* Dot QA→Staging: previous-plan ghost points (positions before latest changes) */}
+              {show.dot && fr("dot-qa-staging") && releases.dotReleases.filter((d): d is typeof d & { qaStart: number } => d.qaStart !== null && !d.isQALegacy).map((d, i) => {
+                const prevStagingWeek = (d.stagingPointWeek ?? (d.qaStart + 1 + 2/7)) - 1;
+                if (prevStagingWeek < 0 || prevStagingWeek > WEEKS) return null;
+                return <GhostReleasePoint key={`pdqs-${i}`} x={wX(prevStagingWeek) - 2} y={fr("dot-qa-staging")!.y + RH / 2} label={`Stg ${d.name}`} color={COLORS.dotQA} />;
               })}
 
               {/* Release Points */}
@@ -1285,10 +1387,18 @@ export default function DeliveryPlan() {
                 return <ReleasePoint key={`rp-${i}`} x={wX(relWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label!.replace('v1.', 'Spr ')} />;
               })}
 
+              {/* Dot Release Points: original-plan ghost points */}
               {show.dot && fr("dot-rel") && dotRelGhosts.map((d, i) => {
                 const relWeek = d.releasePointWeek ?? (d.qaStart! + d.qaDur!);
                 if (relWeek > WEEKS) return null;
                 return <GhostReleasePoint key={`grp-${i}`} x={wX(relWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label!.replace('v1.', 'Spr ')} />;
+              })}
+
+              {/* Dot Release Points: previous-plan ghost points (positions before latest changes) */}
+              {show.dot && fr("dot-rel") && releases.dotReleases.filter(d => d.qaStart !== null && d.label && !d.isQALegacy).map((d, i) => {
+                const prevRelWeek = (d.releasePointWeek ?? (d.qaStart! + d.qaDur!)) - 1;
+                if (prevRelWeek < 0 || prevRelWeek > WEEKS) return null;
+                return <GhostReleasePoint key={`pprp-${i}`} x={wX(prevRelWeek) - 2} y={fr("dot-rel")!.y + RH / 2} label={d.label!.replace('v1.', 'Spr ')} color={COLORS.dotQA} />;
               })}
 
               {/* Major Releases */}
@@ -1312,9 +1422,16 @@ export default function DeliveryPlan() {
 
               {/* Major QA→Staging Points (3 weeks from QA start) */}
               {show.major && fr("major-qa-staging") && releases.majorReleases.map((m, i) => {
-                const stagingWeek = m.qaStart + 3;
+                const stagingWeek = m.stagingPointWeek ?? (m.qaStart + 3);
                 if (stagingWeek > WEEKS) return null;
                 return <ReleasePoint key={`mqs-${i}`} x={wX(stagingWeek) - 2} y={fr("major-qa-staging")!.y + RH / 2} label={`Stg ${m.name}`} color={COLORS.majorQA} onInteract={handleMajorInteract(m.name)} />;
+              })}
+
+              {/* Major QA→Staging: previous-plan ghost points (positions before latest changes) */}
+              {show.major && fr("major-qa-staging") && releases.majorReleases.map((m, i) => {
+                const prevStagingWeek = (m.stagingPointWeek ?? (m.qaStart + 3)) - 1;
+                if (prevStagingWeek < 0 || prevStagingWeek > WEEKS) return null;
+                return <GhostReleasePoint key={`pmqs-${i}`} x={wX(prevStagingWeek) - 2} y={fr("major-qa-staging")!.y + RH / 2} label={`Stg ${m.name}`} color={COLORS.majorQA} />;
               })}
 
               {show.major && fr("major-rel") && releases.majorReleases.map((m, i) => {
@@ -1323,27 +1440,26 @@ export default function DeliveryPlan() {
                 return <ReleasePoint key={`mrp-${i}`} x={wX(relWeek) - 2} y={fr("major-rel")!.y + RH / 2} label={m.name} color={COLORS.majorQA} onInteract={handleMajorInteract(m.name)} />;
               })}
 
+              {/* Major Release Points: original-plan ghost points */}
               {show.major && fr("major-rel") && majorRelGhosts.map((m, i) => {
                 const relWeek = m.qaStart + m.qaDur;
                 if (relWeek > WEEKS) return null;
                 return <GhostReleasePoint key={`gmrp-${i}`} x={wX(relWeek) - 2} y={fr("major-rel")!.y + RH / 2} label={m.name} color={COLORS.majorQA} />;
+              })}
+
+              {/* Major Release Points: previous-plan ghost points (positions before latest changes) */}
+              {show.major && fr("major-rel") && releases.majorReleases.map((m, i) => {
+                const prevRelWeek = m.qaStart + m.qaDur - 1;
+                if (prevRelWeek < 0 || prevRelWeek > WEEKS) return null;
+                return <GhostReleasePoint key={`pmrp-${i}`} x={wX(prevRelWeek) - 2} y={fr("major-rel")!.y + RH / 2} label={m.name} color={COLORS.majorQA} />;
               })}
             </svg>
             </div>
           </div>
 
           <p style={{ textAlign: "center", color: COLORS.textMuted, fontSize: 10.5, marginTop: 20, fontFamily: "'DM Sans', sans-serif" }} className="text-xs md:text-sm">
-            Sprint Planning · Revised April 28, 2026 · Bluecopa · March 2026 – December 2026 · Ghost outlines = original planned positions
+            Sprint Planning · Revised April 28, 2026 · Bluecopa · March 2026 – August 2027 · Ghost outlines = original planned positions
           </p>
-
-          <OwnerSummary
-            ownerData={ownerData}
-            colors={COLORS}
-            onOwnerClick={(owner, x, y) => {
-              setCommentsPopup(null);
-              setOwnerPopup((prev) => prev?.owner === owner ? null : { owner, x, y });
-            }}
-          />
         </div>
       </div>
 
