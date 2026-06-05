@@ -1103,6 +1103,43 @@ export default function DeliveryPlan() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
+      <a
+        href="https://docs.google.com/spreadsheets/d/1qrAjggZbtNMZkMMmo7GEuhmz9ch2HhwVdc1Ftpi0GfE/edit?usp=drive_link"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: 'fixed',
+          top: 20,
+          left: 20,
+          zIndex: 1000,
+          padding: '8px 14px',
+          borderRadius: 8,
+          border: `1.5px solid ${COLORS.surfaceLight}`,
+          background: COLORS.surface,
+          color: COLORS.textSecondary,
+          fontWeight: 600,
+          fontSize: 12,
+          cursor: 'pointer',
+          fontFamily: "'DM Sans', sans-serif",
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7,
+          textDecoration: 'none',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          transition: 'all 0.2s ease',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+          <rect x="3" y="3" width="18" height="18" rx="2" fill="#34A853" opacity="0.15" />
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="#34A853" strokeWidth="1.5" />
+          <line x1="3" y1="9" x2="21" y2="9" stroke="#34A853" strokeWidth="1.2" />
+          <line x1="3" y1="15" x2="21" y2="15" stroke="#34A853" strokeWidth="1.2" />
+          <line x1="9" y1="3" x2="9" y2="21" stroke="#34A853" strokeWidth="1.2" />
+          <line x1="15" y1="3" x2="15" y2="21" stroke="#34A853" strokeWidth="1.2" />
+        </svg>
+        <span style={{ color: COLORS.textPrimary }}>Platform Roadmap Features</span>
+      </a>
       <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
       {user && (
         <div style={{
