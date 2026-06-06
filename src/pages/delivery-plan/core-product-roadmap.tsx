@@ -194,7 +194,7 @@ export default function CoreProductRoadmap() {
     try {
       const { downloadPDF } = await import('../../utils/roadmap-export');
       // Cast to compatible types — MajorItemInfo is a superset of ItemInfo
-      downloadPDF(majorReleases as MajorConfig[], majorItems as Record<string, ItemInfo[]>);
+      await downloadPDF(majorReleases as MajorConfig[], majorItems as Record<string, ItemInfo[]>);
     } finally {
       setDownloading(null);
     }
