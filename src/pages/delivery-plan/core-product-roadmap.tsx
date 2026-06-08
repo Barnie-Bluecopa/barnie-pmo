@@ -3,7 +3,7 @@ import type { MajorItemInfo } from "../api/major-items";
 import { useAuth } from "@/contexts/AuthContext";
 import Head from "next/head";
 import Link from "next/link";
-import type { MajorConfig, ItemInfo } from "../../utils/roadmap-export";
+import type { MajorConfig, ItemInfo, ExportTheme } from "../../utils/roadmap-export";
 
 // ── Types ────────────────────────────────────────────────
 type Theme = 'dark' | 'light';
@@ -168,7 +168,8 @@ export default function CoreProductRoadmap() {
   const { user, signOut } = useAuth();
   const [theme, setTheme] = useState<Theme>('dark');
   const [majorItems, setMajorItems] = useState<Record<string, MajorItemInfo[]>>({});
-  const [downloading, setDownloading] = useState<null | 'pdf' | 'ppt'>(null);
+  const [downloading, setDownloading] = useState<null | 'pdf-dark' | 'pdf-light' | 'ppt-dark' | 'ppt-light'>(null);
+  const [openMenu, setOpenMenu] = useState<null | 'pdf' | 'ppt'>(null);
 
   // refs for header/body/fake-scrollbar horizontal scroll sync
   const headerScrollRef = useRef<HTMLDivElement>(null);
@@ -189,22 +190,17 @@ export default function CoreProductRoadmap() {
     if (headerScrollRef.current) headerScrollRef.current.scrollLeft = sl;
   };
 
-  const handleDownloadPDF = async () => {
-    setDownloading('pdf');
+  const handleDownload = async (type: 'pdf' | 'ppt', exportTheme: ExportTheme) => {
+    setOpenMenu(null);
+    setDownloading(`${type}-${exportTheme}` as const);
     try {
-      const { downloadPDF } = await import('../../utils/roadmap-export');
-      // Cast to compatible types — MajorItemInfo is a superset of ItemInfo
-      await downloadPDF(majorReleases as MajorConfig[], majorItems as Record<string, ItemInfo[]>);
-    } finally {
-      setDownloading(null);
-    }
-  };
-
-  const handleDownloadPPT = async () => {
-    setDownloading('ppt');
-    try {
-      const { downloadPPT } = await import('../../utils/roadmap-export');
-      await downloadPPT(majorReleases as MajorConfig[], majorItems as Record<string, ItemInfo[]>);
+      if (type === 'pdf') {
+        const { downloadPDF } = await import('../../utils/roadmap-export');
+        await downloadPDF(majorReleases as MajorConfig[], majorItems as Record<string, ItemInfo[]>, exportTheme);
+      } else {
+        const { downloadPPT } = await import('../../utils/roadmap-export');
+        await downloadPPT(majorReleases as MajorConfig[], majorItems as Record<string, ItemInfo[]>, exportTheme);
+      }
     } finally {
       setDownloading(null);
     }
@@ -383,55 +379,104 @@ export default function CoreProductRoadmap() {
 
             {/* Download buttons */}
             <div style={{ display: 'flex', gap: 8 }}>
-              {/* PDF */}
-              <button
-                onClick={handleDownloadPDF}
-                disabled={downloading !== null}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '7px 16px', borderRadius: 8,
-                  border: `1.5px solid ${COLORS.surfaceLight}`,
-                  background: downloading === 'pdf' ? COLORS.surfaceLight : COLORS.surface,
-                  color: downloading === 'pdf' ? COLORS.textMuted : COLORS.textPrimary,
-                  fontWeight: 600, fontSize: 12, cursor: downloading !== null ? 'not-allowed' : 'pointer',
-                  fontFamily: "'DM Sans', sans-serif",
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                  transition: 'all 0.2s ease',
-                  opacity: downloading !== null && downloading !== 'pdf' ? 0.5 : 1,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
-                </svg>
-                {downloading === 'pdf' ? 'Generating…' : 'Download PDF'}
-              </button>
+              {/* Click-outside backdrop — closes any open dropdown */}
+              {openMenu && (
+                <div
+                  onClick={() => setOpenMenu(null)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 98 }}
+                />
+              )}
 
-              {/* PPT */}
-              <button
-                onClick={handleDownloadPPT}
-                disabled={downloading !== null}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '7px 16px', borderRadius: 8,
-                  border: `1.5px solid ${COLORS.surfaceLight}`,
-                  background: downloading === 'ppt' ? COLORS.surfaceLight : COLORS.surface,
-                  color: downloading === 'ppt' ? COLORS.textMuted : COLORS.textPrimary,
-                  fontWeight: 600, fontSize: 12, cursor: downloading !== null ? 'not-allowed' : 'pointer',
+              {/* PDF split-button */}
+              {(['pdf', 'ppt'] as const).map(type => {
+                const isGenerating = downloading?.startsWith(type) ?? false;
+                const isDisabled = downloading !== null;
+                const label = type === 'pdf' ? 'PDF' : 'PPT';
+                const icon = type === 'pdf'
+                  ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+                    </svg>
+                  : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="3" width="20" height="14" rx="2"/>
+                      <path d="M8 21h8M12 17v4"/>
+                      <path d="M9 9h1.5a1.5 1.5 0 0 1 0 3H9v-3zm0 3v2"/>
+                    </svg>;
+
+                const btnBase: React.CSSProperties = {
+                  display: 'flex', alignItems: 'center',
+                  background: isGenerating ? COLORS.surfaceLight : COLORS.surface,
+                  color: isGenerating ? COLORS.textMuted : COLORS.textPrimary,
+                  fontWeight: 600, fontSize: 12,
                   fontFamily: "'DM Sans', sans-serif",
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  border: 'none', cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  opacity: isDisabled && !isGenerating ? 0.5 : 1,
                   transition: 'all 0.2s ease',
-                  opacity: downloading !== null && downloading !== 'ppt' ? 0.5 : 1,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="3" width="20" height="14" rx="2"/>
-                  <path d="M8 21h8M12 17v4"/>
-                  <path d="M9 9h1.5a1.5 1.5 0 0 1 0 3H9v-3zm0 3v2"/>
-                </svg>
-                {downloading === 'ppt' ? 'Generating…' : 'Download PPT'}
-              </button>
+                };
+
+                return (
+                  <div key={type} style={{ position: 'relative', zIndex: 99 }}>
+                    <div style={{
+                      display: 'flex', borderRadius: 8, overflow: 'hidden',
+                      border: `1.5px solid ${COLORS.surfaceLight}`,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    }}>
+                      {/* Label side */}
+                      <div style={{ ...btnBase, gap: 7, padding: '7px 12px', borderRight: `1px solid ${COLORS.surfaceLight}` }}>
+                        {icon}
+                        {isGenerating ? 'Generating…' : `Download ${label}`}
+                      </div>
+                      {/* Chevron — opens the theme dropdown */}
+                      <button
+                        disabled={isDisabled}
+                        onClick={() => setOpenMenu(m => m === type ? null : type)}
+                        style={{ ...btnBase, padding: '7px 9px' }}
+                        title={`Choose ${label} theme`}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Theme dropdown */}
+                    {openMenu === type && (
+                      <div style={{
+                        position: 'absolute', top: 'calc(100% + 4px)', right: 0,
+                        zIndex: 100, minWidth: 140,
+                        background: COLORS.surface,
+                        border: `1px solid ${COLORS.surfaceLight}`,
+                        borderRadius: 8, overflow: 'hidden',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                      }}>
+                        {(['dark', 'light'] as const).map(t => (
+                          <button
+                            key={t}
+                            onClick={() => handleDownload(type, t)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 8,
+                              width: '100%', padding: '9px 14px',
+                              background: 'transparent',
+                              color: COLORS.textPrimary,
+                              fontSize: 12, fontWeight: 500,
+                              fontFamily: "'DM Sans', sans-serif",
+                              border: 'none', cursor: 'pointer',
+                              textAlign: 'left',
+                            }}
+                          >
+                            {t === 'dark'
+                              ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                              : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                            }
+                            {t === 'dark' ? 'Dark version' : 'Light version'}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
